@@ -14,16 +14,24 @@ import Send from "~icons/ri/send-plane-line";
 
 defineOptions({ name: "MessageCenter" });
 
-const typeMap: Record<string, string> = {
-  alert_low: "库存下限预警", alert_high: "库存上限预警",
-  alert_normal: "预警恢复", order_submit: "待审核", order_audit: "审核通过",
-  announcement: "通知公告"
-};
-const typeTagMap: Record<string, string> = {
-  alert_low: "danger", alert_high: "warning", alert_normal: "success",
-  order_submit: "warning", order_audit: "success",
-  announcement: "primary"
-};
+const typeMap = reactive<Record<string, string>>({});
+const typeTagMap = reactive<Record<string, string>>({});
+const typeOptions = ref<{ label: string; value: string }[]>([]);
+
+async function loadTypeDict() {
+  try {
+    const res = await api.get("/sys/dict/data/message_type");
+    const list = res.data || [];
+    typeOptions.value = list.map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+    for (const d of list) {
+      typeMap[d.dict_value] = d.dict_label;
+      typeTagMap[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
 
 const list = ref<any[]>([]);
 const loading = ref(false);
@@ -157,7 +165,7 @@ function formatTime(v: string) {
   }).replace(/\//g, "-");
 }
 
-onMounted(fetchData);
+onMounted(() => { loadTypeDict(); fetchData(); });
 </script>
 
 <template>
@@ -191,12 +199,7 @@ onMounted(fetchData);
       <div :style="{ padding: '16px 20px' }">
         <div class="flex items-center gap-3 flex-wrap">
           <el-select v-model="filterType" clearable placeholder="消息类型" class="w-40!" @change="handleSearch">
-            <el-option label="通知公告" value="announcement" />
-            <el-option label="库存下限预警" value="alert_low" />
-            <el-option label="库存上限预警" value="alert_high" />
-            <el-option label="预警恢复" value="alert_normal" />
-            <el-option label="待审核" value="order_submit" />
-            <el-option label="审核通过" value="order_audit" />
+            <el-option v-for="t in typeOptions" :key="t.value" :label="t.label" :value="t.value" />
           </el-select>
           <el-select v-model="filterRead" clearable placeholder="读取状态" class="w-28!" @change="handleSearch">
             <el-option label="未读" :value="0" />
@@ -269,10 +272,7 @@ onMounted(fetchData);
       <el-form :model="sendForm" label-width="80px">
         <el-form-item label="消息类型">
           <el-select v-model="sendForm.type" class="w-full!">
-            <el-option label="通知公告" value="announcement" />
-            <el-option label="库存下限预警" value="alert_low" />
-            <el-option label="库存上限预警" value="alert_high" />
-            <el-option label="预警恢复" value="alert_normal" />
+            <el-option v-for="t in typeOptions" :key="t.value" :label="t.label" :value="t.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="消息标题">

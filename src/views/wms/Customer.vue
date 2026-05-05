@@ -27,6 +27,7 @@ const pagination = reactive({
   background: true
 });
 const customerLevelOptions = ref<any[]>([]);
+const customerLevelMap = reactive<Record<string, string>>({});
 
 const statsCards = computed(() => [
   { label: "客户总数", value: pagination.total, color: "var(--el-color-primary)", icon: TeamLine },

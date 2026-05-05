@@ -47,7 +47,19 @@ function alertTagType(row: any): "info" | "danger" | "warning" | "success" {
   return "success";
 }
 
-const alertLabelMap: Record<string, string> = { low: "低库存", high: "高库存", normal: "正常", zero: "零库存" };
+const alertLabelMap = reactive<Record<string, string>>({});
+const alertOptions = ref<{ label: string; value: string }[]>([]);
+
+async function loadAlertDict() {
+  try {
+    const res = await api.get("/sys/dict/data/stock_alert_level");
+    const list = res.data || [];
+    alertOptions.value = list.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
+    for (const d of list) {
+      alertLabelMap[d.dict_value] = d.dict_label;
+    }
+  } catch { /* 字典加载失败 */ }
+}
 
 // ==================== 统计 ====================
 const stats = computed(() => ({
@@ -301,7 +313,7 @@ async function doStockImport() {
   finally { importing.value = false; }
 }
 
-onMounted(() => { fetchData(); loadWarehouses(); searchProduct(); });
+onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(); });
 </script>
 
 <template>
@@ -367,10 +379,7 @@ onMounted(() => { fetchData(); loadWarehouses(); searchProduct(); });
           <el-option v-for="p in productModelOptions" :key="p.product_model" :label="p.product_model" :value="p.product_model" />
         </el-select>
         <el-select v-model="filters.alert" clearable placeholder="库存预警" class="w-32!" @change="applyFilters">
-          <el-option label="低库存" value="low" />
-          <el-option label="高库存" value="high" />
-          <el-option label="正常" value="normal" />
-          <el-option label="零库存" value="zero" />
+          <el-option v-for="a in alertOptions" :key="a.value" :label="a.label" :value="a.value" />
         </el-select>
         <el-button type="primary" :loading="loading" @click="applyFilters">查询</el-button>
         <el-button @click="resetFilters">重置</el-button>

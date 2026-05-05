@@ -27,16 +27,25 @@ const pagination = reactive({
   background: true
 });
 
-const statusMap: Record<number, { label: string; type: string }> = {
-  1: { label: "可用", type: "success" },
-  2: { label: "维修", type: "warning" },
-  3: { label: "停用", type: "info" }
-};
-const statusOptions = [
-  { label: "可用", value: 1 },
-  { label: "维修", value: 2 },
-  { label: "停用", value: 3 }
-];
+const statusMap = reactive<Record<number, { label: string; type: string }>>({});
+const statusOptions = ref<{ label: string; value: number }[]>([]);
+
+async function loadStatusDict() {
+  try {
+    const res = await api.get("/sys/dict/data/vehicle_status");
+    const list = res.data || [];
+    statusOptions.value = list.map((d: any) => ({
+      label: d.dict_label,
+      value: Number(d.dict_value)
+    }));
+    for (const d of list) {
+      statusMap[Number(d.dict_value)] = {
+        label: d.dict_label,
+        type: d.remark || "info"
+      };
+    }
+  } catch { /* 字典加载失败 */ }
+}
 
 const statsCards = computed(() => [
   { label: "车辆总数", value: pagination.total, color: "var(--el-color-primary)", icon: CarLine },
@@ -174,7 +183,7 @@ async function handleDelete(row: any) {
   fetchData();
 }
 
-onMounted(fetchData);
+onMounted(() => { loadStatusDict(); fetchData(); });
 </script>
 
 <template>

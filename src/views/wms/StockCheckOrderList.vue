@@ -27,8 +27,22 @@ const pagination = reactive({
 });
 const warehouses = ref<any[]>([]);
 
-const statusMap: Record<string, string> = { draft: "草稿", confirmed: "已确认", adjusted: "已调整" };
-const statusType: Record<string, string> = { draft: "info", confirmed: "warning", adjusted: "success" };
+const statusMap = reactive<Record<string, string>>({});
+const statusType = reactive<Record<string, string>>({});
+
+async function loadStatusDict() {
+  try {
+    const res = await api.get("/sys/dict/data/stock_check_status");
+    for (const d of res.data || []) {
+      statusMap[d.dict_value] = d.dict_label;
+      statusType[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
+
+const statusFilterOptions = computed(() =>
+  Object.entries(statusMap).map(([value, label]) => ({ label, value }))
+);
 
 const headerCellStyle = {
   background: "var(--el-fill-color-light)",
@@ -150,7 +164,7 @@ function formatTime(v: string) {
   }).replace(/\//g, "-");
 }
 
-onMounted(() => { fetchData(); loadWarehouses(); });
+onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
 </script>
 
 <template>
@@ -261,9 +275,7 @@ onMounted(() => { fetchData(); loadWarehouses(); });
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filters.status" clearable class="w-full!">
-            <el-option label="草稿" value="draft" />
-            <el-option label="已确认" value="confirmed" />
-            <el-option label="已调整" value="adjusted" />
+            <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
       </el-form>

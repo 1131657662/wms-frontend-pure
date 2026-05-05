@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
@@ -9,16 +9,18 @@ defineOptions({ name: "StockCheckOrderDetail" });
 const route = useRoute();
 const router = useRouter();
 
-const statusMap: Record<string, string> = {
-  draft: "草稿",
-  confirmed: "已确认",
-  adjusted: "已调整"
-};
-const statusType: Record<string, string> = {
-  draft: "info",
-  confirmed: "warning",
-  adjusted: "success"
-};
+const statusMap = reactive<Record<string, string>>({});
+const statusType = reactive<Record<string, string>>({});
+
+async function loadStatusDict() {
+  try {
+    const res = await api.get("/sys/dict/data/stock_check_status");
+    for (const d of res.data || []) {
+      statusMap[d.dict_value] = d.dict_label;
+      statusType[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
 
 const order = ref<any>(null);
 const details = ref<any[]>([]);
@@ -146,7 +148,7 @@ async function handleAdjust() {
   }
 }
 
-onMounted(loadData);
+onMounted(() => { loadData(); loadStatusDict(); });
 </script>
 
 <template>

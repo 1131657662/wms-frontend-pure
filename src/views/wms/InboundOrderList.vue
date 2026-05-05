@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { formatDate } from "@/utils/format";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
@@ -35,20 +36,25 @@ const selectedRows = ref<any[]>([]);
 const exporting = ref(false);
 const batchActing = ref(false);
 
-const statusMap: Record<string, string> = {
-  draft: "草稿",
-  submit: "已提交",
-  audited: "已审核",
-  cancelled: "已取消"
-};
-const statusType: Record<string, string> = {
-  draft: "info",
-  submit: "warning",
-  audited: "success",
-  cancelled: "danger"
-};
+const statusMap = reactive<Record<string, string>>({});
+const statusType = reactive<Record<string, string>>({});
+
+async function loadStatusDict() {
+  try {
+    const res = await api.get("/sys/dict/data/order_status");
+    for (const d of res.data || []) {
+      statusMap[d.dict_value] = d.dict_label;
+      statusType[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
+
+const statusFilterOptions = computed(() =>
+  Object.entries(statusMap).map(([value, label]) => ({ label, value }))
+);
 
 const billTypeOptions = ref<{ label: string; value: string }[]>([]);
+const billTypeMap = reactive<Record<string, string>>({});
 
 const headerCellStyle = {
   background: "var(--el-fill-color-light)",
@@ -72,8 +78,8 @@ const columns: any[] = [
     width: 170,
     showOverflowTooltip: true
   },
-  { label: "单据类型", prop: "bill_type_code", width: 110, showOverflowTooltip: true },
-  { label: "入库日期", prop: "inbound_date", width: 110 },
+  { label: "单据类型", prop: "bill_type_code", slot: "bill_type_code", width: 110, showOverflowTooltip: true },
+  { label: "入库日期", prop: "inbound_date", slot: "inbound_date", width: 110 },
   { label: "车号", prop: "vehicle_no", width: 120, showOverflowTooltip: true },
   { label: "柜号", prop: "container_no", width: 100, showOverflowTooltip: true },
   {
@@ -512,15 +518,15 @@ function formatTime(t: string) {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    billTypeOptions.value = (res.data || []).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const list = res.data || [];
+    billTypeOptions.value = list.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
+    for (const d of list) { billTypeMap[d.dict_value] = d.dict_label; }
   } catch { /* 字典加载失败使用空数组 */ }
 }
 
 onMounted(() => {
   loadDict();
+  loadStatusDict();
   fetchData();
   loadWarehouses();
   loadSuppliers();
@@ -640,6 +646,8 @@ onMounted(() => {
               >{{ statusMap[row.order_status] || row.order_status }}</el-tag
             >
           </template>
+          <template #bill_type_code="{ row }">{{ billTypeMap[row.bill_type_code] || row.bill_type_code || "—" }}</template>
+          <template #inbound_date="{ row }">{{ formatDate(row.inbound_date) }}</template>
           <template #audit_time="{ row }">{{
             formatTime(row.audit_time)
           }}</template>
@@ -848,10 +856,7 @@ onMounted(() => {
             placeholder="全部"
             clearable
           >
-            <el-option label="草稿" value="draft" />
-            <el-option label="已提交" value="submit" />
-            <el-option label="已审核" value="audited" />
-            <el-option label="已取消" value="cancelled" />
+            <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </div>
         <div class="drawer-field">

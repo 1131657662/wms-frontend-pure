@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
@@ -10,18 +10,28 @@ defineOptions({ name: "OutboundOrderDetail" });
 const route = useRoute();
 const router = useRouter();
 
-const statusMap: Record<string, string> = {
-  draft: "草稿",
-  submit: "已提交",
-  audited: "已审核",
-  cancelled: "已取消"
-};
-const statusType: Record<string, string> = {
-  draft: "info",
-  submit: "warning",
-  audited: "success",
-  cancelled: "danger"
-};
+const statusMap = reactive<Record<string, string>>({});
+const statusType = reactive<Record<string, string>>({});
+const billTypeMap = reactive<Record<string, string>>({});
+
+async function loadStatusDict() {
+  try {
+    const res = await api.get("/sys/dict/data/order_status");
+    for (const d of res.data || []) {
+      statusMap[d.dict_value] = d.dict_label;
+      statusType[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
+
+async function loadBillTypeDict() {
+  try {
+    const res = await api.get("/sys/dict/data/outbound_type");
+    for (const d of res.data || []) {
+      billTypeMap[d.dict_value] = d.dict_label;
+    }
+  } catch { /* 字典加载失败 */ }
+}
 
 const order = ref<any>(null);
 const details = ref<any[]>([]);
@@ -211,7 +221,7 @@ async function handleRevert() {
   }
 }
 
-onMounted(loadData);
+onMounted(() => { loadData(); loadStatusDict(); loadBillTypeDict(); });
 </script>
 
 <template>
@@ -278,7 +288,7 @@ onMounted(loadData);
           order.order_no
         }}</el-descriptions-item>
         <el-descriptions-item label="单据类型">{{
-          order.bill_type_code || "出库单"
+          billTypeMap[order.bill_type_code] || order.bill_type_code || "—"
         }}</el-descriptions-item>
         <el-descriptions-item label="仓库">{{
           order.warehouse_name || order.warehouse_code

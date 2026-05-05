@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { reactive, onMounted } from "vue";
+import api from "@/api/wms";
+
 defineOptions({ name: "DocTable" });
 
 defineProps<{
@@ -6,18 +9,29 @@ defineProps<{
   loading?: boolean;
 }>();
 
-const docTypeText: Record<string, string> = {
-  inbound: "入库单", outbound: "出库单", check: "盘点单"
-};
-const docTypeTag: Record<string, string> = {
-  inbound: "primary", outbound: "success", check: "warning"
-};
-const statusType: Record<string, string> = {
-  draft: "info", submit: "warning", audited: "success", cancelled: "danger"
-};
-const statusText: Record<string, string> = {
-  draft: "草稿", submit: "待审核", audited: "已审核", cancelled: "已取消"
-};
+const docTypeText = reactive<Record<string, string>>({});
+const docTypeTag = reactive<Record<string, string>>({});
+const statusType = reactive<Record<string, string>>({});
+const statusText = reactive<Record<string, string>>({});
+
+async function loadDicts() {
+  try {
+    const [docRes, statusRes] = await Promise.all([
+      api.get("/sys/dict/data/doc_type"),
+      api.get("/sys/dict/data/order_status")
+    ]);
+    for (const d of docRes.data || []) {
+      docTypeText[d.dict_value] = d.dict_label;
+      docTypeTag[d.dict_value] = d.remark || "info";
+    }
+    for (const d of statusRes.data || []) {
+      statusText[d.dict_value] = d.dict_label;
+      statusType[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
+
+onMounted(loadDicts);
 
 function formatTime(t: string) {
   if (!t) return "";

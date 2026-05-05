@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { formatDate } from "@/utils/format";
 import Calendar from "~icons/ri/calendar-2-line";
 import OfficeBuilding from "~icons/ep/office-building";
 import Search from "~icons/ep/search";
@@ -56,21 +57,25 @@ const drawerFilter = reactive({
   keyword: ""
 });
 
-const statusMap: Record<string, string> = {
-  draft: "草稿",
-  submit: "已提交",
-  audited: "已审核",
-  completed: "已完成",
-  cancelled: "已取消"
-};
-const statusTypeMap: Record<string, string> = {
-  draft: "info",
-  submit: "warning",
-  audited: "success",
-  completed: "success",
-  cancelled: "danger"
-};
+const statusMap = reactive<Record<string, string>>({});
+const statusTypeMap = reactive<Record<string, string>>({});
+
+async function loadStatusDict() {
+  try {
+    const res = await api.get("/sys/dict/data/order_status");
+    for (const d of res.data || []) {
+      statusMap[d.dict_value] = d.dict_label;
+      statusTypeMap[d.dict_value] = d.remark || "info";
+    }
+  } catch { /* 字典加载失败 */ }
+}
+
+const statusFilterOptions = computed(() =>
+  Object.entries(statusMap).map(([value, label]) => ({ label, value }))
+);
+
 const billTypeOptions = ref<{ label: string; value: string }[]>([]);
+const billTypeMap = reactive<Record<string, string>>({});
 
 const headerCellStyle = {
   background: "var(--el-fill-color-light)",
@@ -185,7 +190,7 @@ const filterTags = computed(() => {
     tags.push({
       source: "drawer",
       key: "bill_type_code",
-      label: `单据类型: ${drawerFilter.bill_type_code}`
+      label: `单据类型: ${billTypeMap[drawerFilter.bill_type_code] || drawerFilter.bill_type_code}`
     });
   if (drawerFilter.product_code)
     tags.push({
@@ -541,15 +546,15 @@ function formatTime(t: string) {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    billTypeOptions.value = (res.data || []).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const blist = (res.data || []);
+    billTypeOptions.value = blist.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
+    for (const d of blist) { billTypeMap[d.dict_value] = d.dict_label; }
   } catch { /* 字典加载失败使用空数组 */ }
 }
 
 onMounted(async () => {
   loadDict();
+  loadStatusDict();
   const [whRes, spRes] = await Promise.all([
     api.get("/warehouse/list", { params: { pageSize: 999 } }),
     api.get("/supplier/list", { params: { pageSize: 999 } })
@@ -638,14 +643,7 @@ onMounted(async () => {
               placeholder="请选择"
               class="w-32.5!"
             >
-              <el-option label="草稿" value="draft" /><el-option
-                label="已提交"
-                value="submit"
-              />
-              <el-option label="已审核" value="audited" /><el-option
-                label="已完成"
-                value="completed"
-              />
+              <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
             </el-select>
           </el-form-item>
           <el-form-item label="关键字" class="mb-0!">
@@ -739,14 +737,14 @@ onMounted(async () => {
             <EmptyState title="暂无入库明细数据" description="请设置筛选条件后点击查询" />
           </template>
           <template #inbound_date="{ row }">{{
-            formatTime(row.inbound_date)
+            formatDate(row.inbound_date)
           }}</template>
           <template #inbound_weight="{ row }">{{
             Number(row.inbound_weight || 0).toFixed(4)
           }}</template>
           <template #bill_type_code="{ row }">
             <el-tag effect="plain" type="info" size="small">{{
-              row.bill_type_code
+              billTypeMap[row.bill_type_code] || row.bill_type_code
             }}</el-tag>
           </template>
           <template #order_status="{ row }">
@@ -826,12 +824,7 @@ onMounted(async () => {
             v-model="drawerFilter.order_status"
             clearable
             class="w-full!"
-            ><el-option label="草稿" value="draft" /><el-option
-              label="已提交"
-              value="submit" /><el-option
-              label="已审核"
-              value="audited" /><el-option label="已完成" value="completed"
-          /></el-select>
+            ><el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" /></el-select>
         </div>
       </div>
       <div class="drawer-section">

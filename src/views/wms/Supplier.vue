@@ -27,6 +27,7 @@ const pagination = reactive({
   background: true
 });
 const supplierTypeOptions = ref<any[]>([]);
+const supplierTypeMap = reactive<Record<string, string>>({});
 const supplierLevelOptions = ref<any[]>([]);
 const cooperationStatusOptions = ref<any[]>([]);
 
@@ -210,10 +211,9 @@ async function loadDict() {
       api.get("/sys/dict/data/supplier_level"),
       api.get("/sys/dict/data/cooperation_status")
     ]);
-    supplierTypeOptions.value = (types.data || []).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const stypes = (types.data || []);
+    supplierTypeOptions.value = stypes.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
+    for (const d of stypes) { supplierTypeMap[d.dict_value] = d.dict_label; }
     supplierLevelOptions.value = (levels.data || []).map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
@@ -344,7 +344,7 @@ onMounted(() => {
               effect="plain"
               type="info"
               size="small"
-              >{{ row.supplier_type }}</el-tag
+              >{{ supplierTypeMap[row.supplier_type] || row.supplier_type }}</el-tag
             >
             <span v-else>-</span>
           </template>
