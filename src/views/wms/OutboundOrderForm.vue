@@ -16,14 +16,7 @@ function uid() {
   return "d_" + ++_id + "_" + Date.now();
 }
 
-const billTypes = [
-  "销售出库",
-  "退货出库",
-  "调拨出库",
-  "生产领料",
-  "盘亏出库",
-  "其他出库"
-];
+const billTypeOptions = ref<{ label: string; value: string }[]>([]);
 const warehouses = ref<any[]>([]);
 const customerOptions = ref<any[]>([]);
 const customerLoading = ref(false);
@@ -350,7 +343,18 @@ async function loadWarehouses() {
   warehouses.value = res.data.list || [];
 }
 
+async function loadDict() {
+  try {
+    const res = await api.get("/sys/dict/data/outbound_type");
+    billTypeOptions.value = (res.data || []).map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+  } catch { /* 字典加载失败使用空数组 */ }
+}
+
 onMounted(async () => {
+  await loadDict();
   await loadWarehouses();
   await searchCustomer("");
   await searchVehicle("");
@@ -408,10 +412,10 @@ onMounted(async () => {
             <el-form-item label="单据类型">
               <el-select v-model="form.bill_type_code" class="w-full!">
                 <el-option
-                  v-for="t in billTypes"
-                  :key="t"
-                  :label="t"
-                  :value="t"
+                  v-for="t in billTypeOptions"
+                  :key="t.value"
+                  :label="t.label"
+                  :value="t.value"
                 />
               </el-select>
             </el-form-item>

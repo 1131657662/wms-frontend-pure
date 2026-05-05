@@ -70,14 +70,7 @@ const statusTypeMap: Record<string, string> = {
   completed: "success",
   cancelled: "danger"
 };
-const billTypeOptions = [
-  "采购入库",
-  "退货入库",
-  "调拨入库",
-  "生产入库",
-  "盘盈入库",
-  "其他入库"
-];
+const billTypeOptions = ref<{ label: string; value: string }[]>([]);
 
 const headerCellStyle = {
   background: "var(--el-fill-color-light)",
@@ -545,7 +538,18 @@ function formatTime(t: string) {
   }).replace(/\//g, "-");
 }
 
+async function loadDict() {
+  try {
+    const res = await api.get("/sys/dict/data/inbound_type");
+    billTypeOptions.value = (res.data || []).map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+  } catch { /* 字典加载失败使用空数组 */ }
+}
+
 onMounted(async () => {
+  loadDict();
   const [whRes, spRes] = await Promise.all([
     api.get("/warehouse/list", { params: { pageSize: 999 } }),
     api.get("/supplier/list", { params: { pageSize: 999 } })
@@ -840,9 +844,9 @@ onMounted(async () => {
             class="w-full!"
             ><el-option
               v-for="t in billTypeOptions"
-              :key="t"
-              :label="t"
-              :value="t"
+              :key="t.value"
+              :label="t.label"
+              :value="t.value"
           /></el-select>
         </div>
         <div class="drawer-field">

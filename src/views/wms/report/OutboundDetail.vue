@@ -70,14 +70,7 @@ const statusTypeMap: Record<string, string> = {
   completed: "success",
   cancelled: "danger"
 };
-const billTypeOptions = [
-  "销售出库",
-  "退货出库",
-  "调拨出库",
-  "生产领料",
-  "盘亏出库",
-  "其他出库"
-];
+const billTypeOptions = ref<{ label: string; value: string }[]>([]);
 
 async function searchCustomers(q: string) {
   if (!q) {
@@ -469,7 +462,18 @@ async function exportData() {
   }
 }
 
+async function loadDict() {
+  try {
+    const res = await api.get("/sys/dict/data/outbound_type");
+    billTypeOptions.value = (res.data || []).map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+  } catch { /* 字典加载失败使用空数组 */ }
+}
+
 onMounted(async () => {
+  loadDict();
   const [whRes, cuRes] = await Promise.all([
     api.get("/warehouse/list", { params: { pageSize: 999 } }),
     api.get("/customer/list", { params: { pageSize: 999 } })
@@ -828,9 +832,9 @@ onMounted(async () => {
             class="w-full!"
             ><el-option
               v-for="t in billTypeOptions"
-              :key="t"
-              :label="t"
-              :value="t" /></el-select
+              :key="t.value"
+              :label="t.label"
+              :value="t.value" /></el-select
         ></el-form-item>
         <el-form-item label="型号"
           ><el-select
