@@ -33,6 +33,12 @@ function findOrder(path: string, orderMap: Record<string, number>): number | und
   // 2. 去掉开头 / 匹配（顶级路由如 dashboard、inbound）
   const name = clean.replace(/^\//, "");
   if (orderMap[name] !== undefined) return orderMap[name];
+  // 3. 末段匹配（如 /base/product-category → /product-category）
+  const segments = clean.split("/").filter(Boolean);
+  if (segments.length >= 2) {
+    const leaf = "/" + segments[segments.length - 1];
+    if (orderMap[leaf] !== undefined) return orderMap[leaf];
+  }
   return undefined;
 }
 
