@@ -44,13 +44,13 @@ const refreshIcon = computed(() => useRenderIcon(RefreshIcon));
       </div>
     </div>
 
-    <div v-if="loading" class="card-loading">
+    <div v-show="loading" class="card-loading">
       <el-skeleton :rows="4" animated style="width:100%" />
     </div>
-    <div v-else-if="empty" class="card-empty">
+    <div v-show="!loading && empty" class="card-empty">
       <el-empty :image-size="60" :description="emptyText || '暂无数据'" />
     </div>
-    <div v-else class="card-content">
+    <div v-show="!loading && !empty" class="card-content">
       <slot />
     </div>
   </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useDark, useECharts } from "@pureadmin/utils";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
@@ -23,6 +23,7 @@ const { isDark } = useDark();
 const theme = computed(() => (isDark.value ? "dark" : "light"));
 
 const loading = ref(true);
+const days = ref(7);
 const panelGroup = ref({ users: 0, messages: 0, moneys: 0, shoppings: 0 });
 const pieData = ref<{ name: string; value: number }[]>([]);
 const trendData = ref<{ name: string; inboundCount: number; outboundCount: number }[]>([]);
@@ -84,23 +85,24 @@ function renderCharts() {
 async function fetchData() {
   loading.value = true;
   try {
-    const res = await api.get("/dashboard/analysis");
+    const res = await api.get("/dashboard/analysis", { params: { days: days.value } });
     const d = res.data;
     panelGroup.value = d.panelGroup ?? panelGroup.value;
     pieData.value = d.pieData ?? [];
     trendData.value = d.trendData ?? [];
     lineData.value = d.lineData ?? [];
     recentDocs.value = d.recentDocs ?? [];
-    await new Promise((r) => setTimeout(r, 50));
-    renderCharts();
-  } catch {
-    /* silent */
+  } catch (e: any) {
+    console.error('Dashboard fetch error:', e);
   } finally {
     loading.value = false;
+    await nextTick();
+    renderCharts();
   }
 }
 
 onMounted(fetchData);
+watch(days, fetchData);
 </script>
 
 <template>
@@ -130,7 +132,7 @@ onMounted(fetchData);
       </ChartCard>
 
       <ChartCard
-        title="近 7 天出入库趋势"
+        :title="`近 ${days} 天出入库趋势`"
         subtitle="入库 vs 出库"
         :loading="loading"
         :empty="!trendData.length"
@@ -138,6 +140,12 @@ onMounted(fetchData);
         show-refresh
         @refresh="fetchData"
       >
+        <template #actions>
+          <el-radio-group v-model="days" size="small">
+            <el-radio-button :value="7">7天</el-radio-button>
+            <el-radio-button :value="30">30天</el-radio-button>
+          </el-radio-group>
+        </template>
         <div ref="barChartRef" style="width:100%;height:320px" />
       </ChartCard>
     </div>
