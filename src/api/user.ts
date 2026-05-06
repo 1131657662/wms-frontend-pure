@@ -76,29 +76,34 @@ type ResultTable = {
 
 /** 登录——对接 WMS 后端 */
 export const getLogin = async (data?: object) => {
-  const res = await axios.post("/api/login", data);
-  const d = res.data;
-  if (d.code === 200) {
-    // 将 WMS 响应转换为 pure-admin 格式
-    const ui = d.data.userInfo || {};
-    const expires = new Date();
-    expires.setHours(expires.getHours() + 24); // 24小时过期
-    return {
-      code: 0,
-      message: "success",
-      data: {
-        accessToken: d.data.token,
-        refreshToken: d.data.token,
-        expires,
-        avatar: ui.avatar || "",
-        username: ui.username || "",
-        nickname: ui.nickname || ui.username || "",
-        roles: ui.roleCode ? [ui.roleCode] : [],
-        permissions: ui.permissions || ["*:*:*"]
-      }
-    };
+  try {
+    const res = await axios.post("/api/login", data);
+    const d = res.data;
+    if (d.code === 200) {
+      // 将 WMS 响应转换为 pure-admin 格式
+      const ui = d.data.userInfo || {};
+      const expires = new Date();
+      expires.setHours(expires.getHours() + 24); // 24小时过期
+      return {
+        code: 0,
+        message: "success",
+        data: {
+          accessToken: d.data.token,
+          refreshToken: d.data.token,
+          expires,
+          avatar: ui.avatar || "",
+          username: ui.username || "",
+          nickname: ui.nickname || ui.username || "",
+          roles: ui.roleCode ? [ui.roleCode] : [],
+          permissions: ui.permissions || ["*:*:*"]
+        }
+      };
+    }
+    throw new Error(d.message || "登录失败");
+  } catch (err: any) {
+    const msg = err.response?.data?.message || err.message || "登录失败";
+    throw new Error(msg);
   }
-  throw new Error(d.message || "登录失败");
 };
 
 /** 刷新`token` */

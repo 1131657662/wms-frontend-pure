@@ -128,6 +128,21 @@ async function handleConfirm(row: any) {
   fetchData();
 }
 
+async function handleVoid(row: any) {
+  await ElMessageBox.confirm(
+    `确定作废盘点单「${row.check_no}」？作废后不可再调整库存。`,
+    "提示",
+    { type: "warning", confirmButtonText: "确定作废", confirmButtonClass: "el-button--danger" }
+  );
+  try {
+    await api.post(`/stock/check_order/${row.id}/void`);
+    ElMessage.success("作废成功");
+    fetchData();
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "作废失败");
+  }
+}
+
 async function handleAdjust(row: any) {
   await ElMessageBox.confirm(`确定按盘点单「${row.check_no}」调整库存？将以实盘数更新库存并生成流水。`, "提示", { type: "warning" });
   await api.post(`/stock/check_order/${row.id}/adjust`);
@@ -258,6 +273,7 @@ onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
               <el-button v-if="row.status === 'draft'" link type="primary" size="small" @click="router.push(`/stock-check/form/${row.id}`)">编辑</el-button>
               <el-button v-if="row.status === 'draft'" type="danger" size="small" :loading="deleting === row.id" @click="handleDelete(row)">删除</el-button>
               <el-button v-if="row.status === 'draft'" link type="warning" size="small" @click="handleConfirm(row)">确认</el-button>
+              <el-button v-if="row.status === 'confirmed'" link type="danger" size="small" @click="handleVoid(row)">作废</el-button>
               <el-button v-if="row.status === 'confirmed'" link type="success" size="small" @click="handleAdjust(row)">调整</el-button>
             </div>
           </template>

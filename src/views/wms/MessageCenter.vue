@@ -65,7 +65,7 @@ const stats = computed(() => ({
 
 // ==================== 列定义 ====================
 const columns: any[] = [
-  { type: "selection", width: 45 },
+  { type: "selection", label: "选择", width: 45 },
   { type: "index", label: "#", width: 56, index: (i: number) => (pagination.currentPage - 1) * pagination.pageSize + i + 1 },
   { label: "标题", prop: "title", minWidth: 200, showOverflowTooltip: true },
   { label: "内容", prop: "content", minWidth: 300, showOverflowTooltip: true },

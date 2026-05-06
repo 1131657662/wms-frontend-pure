@@ -67,7 +67,7 @@ function saveColumnsConfig(key: string, columns: any[]) {
     STORAGE_PREFIX + key,
     JSON.stringify(
       columns.map(col => ({
-        label: col.label,
+        label: col.label ?? (col.type || col.slot || col.prop || ""),
         hide: !!col.hide,
         fixed: col.fixed || false,
         width: col.width
@@ -84,15 +84,23 @@ function loadAndMergeColumns(key: string, freshColumns: any[]): any[] {
       JSON.parse(raw);
     if (!Array.isArray(saved) || saved.length === 0) return cloneDeep(freshColumns);
 
+    // 清除损坏的 localStorage 配置（由历史 bug 写入的无 label 列错误 key）
+    if (saved.some((s: any) => s.label && /^__type_|^__slot_/.test(s.label))) {
+      localStorage.removeItem(STORAGE_PREFIX + key);
+      return cloneDeep(freshColumns);
+    }
+
     const freshMap = new Map<string, any>();
     for (const col of freshColumns) {
-      if (!freshMap.has(col.label)) freshMap.set(col.label, col);
+      const k = col.label ?? (col.type || col.slot || col.prop || "");
+      if (!freshMap.has(k)) freshMap.set(k, col);
     }
-    const savedLabelSet = new Set(saved.map(s => s.label));
+    const savedLabelSet = new Set(saved.map(s => s.label ?? ("" as any)));
 
     // apply saved hide/fixed/width to fresh columns
     for (const s of saved) {
-      const col = freshMap.get(s.label);
+      const k = s.label ?? ("" as any);
+      const col = freshMap.get(k);
       if (col) {
         col.hide = s.hide;
         col.fixed = s.fixed || false;
@@ -103,12 +111,14 @@ function loadAndMergeColumns(key: string, freshColumns: any[]): any[] {
     // reorder: saved order first (only labels still in fresh)
     const result: any[] = [];
     for (const s of saved) {
-      const col = freshMap.get(s.label);
+      const k = s.label ?? ("" as any);
+      const col = freshMap.get(k);
       if (col) result.push(col);
     }
     // append new columns not in saved config
     for (const col of freshColumns) {
-      if (!savedLabelSet.has(col.label)) result.push(col);
+      const k = col.label ?? (col.type || col.slot || col.prop || "");
+      if (!savedLabelSet.has(k)) result.push(col);
     }
     return result;
   } catch {
@@ -146,14 +156,14 @@ export default defineComponent({
         ? loadAndMergeColumns(props.storageKey, props?.columns)
         : cloneDeep(props?.columns)
     );
-    const checkColumnList = ref(getKeyList(dynamicColumns.value, "label"));
+    const checkColumnList = ref(getKeyList(dynamicColumns.value, "label").filter(Boolean));
     const checkedColumns = ref(
       getKeyList(
         dynamicColumns.value.filter(col =>
           isBoolean(col?.hide) ? !col.hide : !(isFunction(col?.hide) && col?.hide())
         ),
         "label"
-      )
+      ).filter(Boolean)
     );
 
     // 深度监听列配置变化（显隐、冻结、列宽），自动持久化到 localStorage
@@ -277,8 +287,8 @@ export default defineComponent({
       checkAll.value = true;
       isIndeterminate.value = false;
       dynamicColumns.value = cloneDeep(props?.columns);
-      checkColumnList.value = getKeyList(dynamicColumns.value, "label");
-      checkedColumns.value = getKeyList(cloneDeep(filterColumns), "label");
+      checkColumnList.value = getKeyList(dynamicColumns.value, "label").filter(Boolean);
+      checkedColumns.value = getKeyList(cloneDeep(filterColumns), "label").filter(Boolean);
       if (props.storageKey)
         localStorage.removeItem(STORAGE_PREFIX + props.storageKey);
     }

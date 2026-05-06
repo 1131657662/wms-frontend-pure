@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { hasPerms } from "@/utils/auth";
 
 import AddFill from "~icons/ri/add-circle-line";
 import Search from "~icons/ri/search-line";
@@ -14,6 +15,9 @@ import UploadFilled from "~icons/ep/upload-filled";
 import Box from "~icons/ep/box";
 import Warning from "~icons/ep/warning";
 import Check from "~icons/ep/circle-check";
+import Delete from "~icons/ep/delete";
+import ArrowLeft from "~icons/ep/arrow-left";
+import ArrowRight from "~icons/ep/arrow-right";
 
 defineOptions({ name: "StockList" });
 const router = useRouter();
@@ -104,6 +108,33 @@ async function fetchData() {
   } finally { loading.value = false; }
 }
 
+// ==================== 仓库维度概览 ====================
+const warehouseSummary = ref<any[]>([]);
+const whScrollRef = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+
+function updateScrollState() {
+  const el = whScrollRef.value;
+  if (!el) return;
+  canScrollLeft.value = el.scrollLeft > 2;
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+}
+
+function scrollWh(dir: number) {
+  const el = whScrollRef.value;
+  if (!el) return;
+  el.scrollBy({ left: dir * 280, behavior: "smooth" });
+}
+
+async function fetchWarehouseSummary() {
+  try {
+    const res = await api.get("/stock/warehouse-summary");
+    warehouseSummary.value = res.data || [];
+    nextTick(() => updateScrollState());
+  } catch { /* ignore */ }
+}
+
 const onSearch = () => { pagination.currentPage = 1; fetchData(); };
 const handleSizeChange = (v: number) => {
     localStorage.setItem("page-size-StockList", String(v)); pagination.pageSize = v; fetchData(); };
@@ -169,6 +200,77 @@ async function handleExport() {
   }
 }
 
+const clearZeroLoading = ref(false);
+const rebuildLoading = ref(false);
+
+async function handleRebuildStock() {
+  await ElMessageBox.confirm(
+    "将以库存流水（stock_journal）为准重新生成所有库存数据。无流水的孤儿记录将被清除。确定继续？",
+    "重建库存",
+    { type: "warning", confirmButtonText: "确定重建" }
+  );
+  rebuildLoading.value = true;
+  try {
+    const res = await api.post("/stock/rebuild");
+    ElMessage.success(res.message || "重建成功");
+    fetchData();
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "重建失败");
+  } finally {
+    rebuildLoading.value = false;
+  }
+}
+
+const resetLoading = ref(false);
+
+async function handleResetStock() {
+  try {
+    await ElMessageBox.prompt(
+      "此操作将清除所有库存记录和期初导入流水。业务流水（入库/出库/盘点）保留，可重新导入恢复。",
+      "重置库存",
+      {
+        confirmButtonText: "确认重置",
+        cancelButtonText: "取消",
+        type: "warning",
+        inputPattern: /^确认重置$/,
+        inputErrorMessage: "请输入「确认重置」后再操作",
+        inputPlaceholder: "请输入「确认重置」"
+      }
+    );
+  } catch {
+    return; // 用户取消
+  }
+  resetLoading.value = true;
+  try {
+    const res = await api.post("/stock/reset");
+    ElMessage.success(res.message || "重置成功");
+    fetchData();
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "重置失败");
+  } finally {
+    resetLoading.value = false;
+  }
+}
+
+async function handleClearZero() {
+  await ElMessageBox.confirm(
+    "确定要清除所有零库存记录吗？（库存件数和吨位均为 0 的记录将被删除）",
+    "清除零库存",
+    { type: "warning", confirmButtonText: "确定清除" }
+  );
+  clearZeroLoading.value = true;
+  try {
+    const res = await api.post("/stock/clear-zero");
+    ElMessage.success(res.message || "清除成功");
+    fetchData();
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "清除失败");
+  } finally {
+    clearZeroLoading.value = false;
+  }
+}
+
+
 // ==================== 格式化 ====================
 function formatStockWeight(v: any) {
   if (v === null || v === undefined || v === "") return "—";
@@ -208,7 +310,7 @@ const journalColumns: any[] = [
   { label: "操作人", prop: "create_by", width: 90 }
 ];
 
-function businessTypeLabel(type: string) { return ({ inbound: "入库", outbound: "出库", check: "盘点", adjust: "调整" } as any)[type] || type; }
+function businessTypeLabel(type: string) { return ({ inbound: "入库", outbound: "出库", check: "盘点", adjust: "调整", import: "期初导入" } as any)[type] || type; }
 
 function openJournal(row: any) {
   journalProduct.value = `${row.product_code} ${row.product_name}`;
@@ -313,7 +415,7 @@ async function doStockImport() {
   finally { importing.value = false; }
 }
 
-onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(); });
+onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(); fetchWarehouseSummary(); });
 </script>
 
 <template>
@@ -340,6 +442,48 @@ onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(
       </div>
     </div>
 
+    <!-- ==================== 仓库维度概览卡片 ==================== -->
+    <div v-if="warehouseSummary.length > 0" class="wh-scroll-wrap mb-4">
+      <div
+        v-show="canScrollLeft"
+        class="wh-arrow wh-arrow-left"
+        @click="scrollWh(-1)"
+      >
+        <el-icon :size="18"><component :is="useRenderIcon(ArrowLeft)" /></el-icon>
+      </div>
+      <div
+        ref="whScrollRef"
+        class="wh-scroll-track"
+        @scroll="updateScrollState"
+      >
+        <div
+          v-for="wh in warehouseSummary"
+          :key="wh.warehouse_code"
+          class="wms-card wh-card"
+        >
+          <div class="flex items-center gap-3">
+            <div class="wh-icon">
+              <el-icon :size="20"><component :is="useRenderIcon(Box)" /></el-icon>
+            </div>
+            <div>
+              <div class="wh-name">{{ wh.warehouse_name }}</div>
+              <div class="wh-stats">{{ wh.total_qty }} 件 | {{ Number(wh.total_weight).toFixed(4) }} 吨 | {{ wh.sku_count }} SKU</div>
+            </div>
+          </div>
+        </div>
+        <div class="wh-placeholder">
+          <span class="wh-placeholder-text">{{ warehouseSummary.length > 0 ? '— 暂无更多仓库 —' : '' }}</span>
+        </div>
+      </div>
+      <div
+        v-show="canScrollRight"
+        class="wh-arrow wh-arrow-right"
+        @click="scrollWh(1)"
+      >
+        <el-icon :size="18"><component :is="useRenderIcon(ArrowRight)" /></el-icon>
+      </div>
+    </div>
+
     <!-- ==================== 操作卡片 ==================== -->
     <div
       class="wms-card mb-4"
@@ -350,9 +494,12 @@ onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(
         操作
       </div>
       <div class="flex items-center gap-2 flex-wrap" :style="{ padding: '8px 20px 0' }">
-        <el-button type="success" :icon="useRenderIcon(Upload)" @click="importVisible = true">导入期初库存</el-button>
+        <el-button v-if="hasPerms('stock:edit')" type="success" :icon="useRenderIcon(Upload)" @click="importVisible = true">导入期初库存</el-button>
         <el-button type="primary" :icon="useRenderIcon(AddFill)" @click="router.push('/stock-check/form')">发起盘点</el-button>
         <el-button plain :icon="useRenderIcon(Download)" :loading="exporting" @click="handleExport">导出 Excel</el-button>
+        <el-button v-if="hasPerms('stock:edit')" type="danger" plain :icon="useRenderIcon(Delete)" :loading="clearZeroLoading" @click="handleClearZero">清除零库存</el-button>
+        <el-button v-if="hasPerms('stock:admin')" type="warning" plain :loading="rebuildLoading" @click="handleRebuildStock">重建库存</el-button>
+        <el-button v-if="hasPerms('stock:admin')" type="danger" plain :loading="resetLoading" @click="handleResetStock">重置库存</el-button>
         <div class="flex-1" />
         <el-input v-model="searchForm.keyword" placeholder="搜索编码 / 名称 / 型号 / 仓库..." clearable class="w-64!" @clear="fetchData" @keyup.enter="onSearch" />
       </div>
@@ -408,7 +555,7 @@ onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(
           row-key="id"
           border
           adaptive
-          :adaptiveConfig="{ offsetBottom: 108 }"
+          :adaptiveConfig="{ offsetBottom: 88 }"
           align-whole="left"
          
           :loading="loading"
@@ -437,7 +584,7 @@ onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(
           </template>
           <template #operation="{ row }">
             <el-button link type="primary" size="small" @click="openJournal(row)">流水</el-button>
-            <el-button link type="warning" size="small" @click="openAdjust(row)">调整</el-button>
+            <!-- 库存由流水驱动，不提供逐行删除和手动调整 -->
           </template>
         </pure-table>
       </template>
@@ -517,6 +664,83 @@ onMounted(() => { loadAlertDict(); fetchData(); loadWarehouses(); searchProduct(
 </template>
 
 <style scoped>
+.wh-scroll-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.wh-scroll-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  flex: 1;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+.wh-scroll-track::-webkit-scrollbar { display: none; }
+.wh-card {
+  flex-shrink: 0;
+  width: 260px;
+  padding: 12px 16px;
+}
+.wh-arrow {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--el-bg-color-overlay);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  cursor: pointer;
+  color: var(--el-text-color-primary);
+  transition: opacity 0.2s;
+}
+.wh-arrow:hover { background: var(--el-fill-color-light); }
+.wh-arrow-left  { left: -8px;  top: 50%; transform: translateY(-50%); }
+.wh-arrow-right { right: -8px; top: 50%; transform: translateY(-50%); }
+
+.wh-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  flex-shrink: 0;
+}
+.wh-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+}
+.wh-stats {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.wh-placeholder {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--el-border-color-lighter);
+  border-radius: 8px;
+  margin-left: 4px;
+}
+.wh-placeholder-text {
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
 :deep(.el-table__body-wrapper .el-table__cell) {
   padding-top: 12px;
   padding-bottom: 12px;

@@ -90,7 +90,7 @@ async function searchSuppliers(q: string) {
     return;
   }
   const res = await api.get("/supplier/list", {
-    params: { keyword: q, pageSize: 50 }
+    params: { keyword: q, pageSize: 500 }
   });
   supplierOptions.value = (res.data.list || []).map((s: any) => ({
     label: s.supplier_name,
@@ -102,7 +102,7 @@ async function searchProducts(q: string) {
     productOptions.value = [];
     return;
   }
-  const res = await api.get("/product/search", { params: { keyword: q } });
+  const res = await api.get("/product/search", { params: { keyword: q, pageSize: 500 } });
   productOptions.value = (res.data || []).map((p: any) => ({
     label: `${p.product_code} / ${p.product_name}`,
     value: p.product_code,
@@ -115,7 +115,7 @@ async function searchVehicles(q: string) {
     vehicleOptions.value = [];
     return;
   }
-  const res = await api.get("/vehicle/search", { params: { keyword: q } });
+  const res = await api.get("/vehicle/search", { params: { keyword: q, pageSize: 500 } });
   vehicleOptions.value = (res.data || []).map((v: any) => ({
     label: v.plate_number,
     value: v.plate_number
@@ -607,7 +607,7 @@ onMounted(async () => {
                 placeholder="开始"
                 value-format="YYYY-MM-DD"
                 :prefix-icon="useRenderIcon(Calendar)"
-                class="w-35!"
+                class="w-34!"
               />
               <span class="text-gray-400">至</span>
               <el-date-picker
@@ -616,7 +616,7 @@ onMounted(async () => {
                 placeholder="结束"
                 value-format="YYYY-MM-DD"
                 :prefix-icon="useRenderIcon(Calendar)"
-                class="w-35!"
+                class="w-34!"
               />
             </div>
           </el-form-item>
@@ -626,7 +626,7 @@ onMounted(async () => {
               clearable
               placeholder="请选择"
               :prefix-icon="useRenderIcon(OfficeBuilding)"
-              class="w-40!"
+              class="w-36!"
             >
               <el-option
                 v-for="w in warehouses"
@@ -641,7 +641,7 @@ onMounted(async () => {
               v-model="quickFilter.order_status"
               clearable
               placeholder="请选择"
-              class="w-32.5!"
+              class="w-28!"
             >
               <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
             </el-select>
@@ -651,7 +651,7 @@ onMounted(async () => {
               v-model="quickFilter.keyword"
               clearable
               placeholder="单号/商品/供应商"
-              class="w-45!"
+              class="w-44!"
               @keyup.enter="search"
             />
           </el-form-item>
@@ -892,7 +892,7 @@ onMounted(async () => {
             ><el-option
               v-for="p in productOptions"
               :key="p.value"
-              :label="p.name"
+              :label="`${p.name} (${p.value})`"
               :value="p.name"
           /></el-select>
         </div>
@@ -910,7 +910,7 @@ onMounted(async () => {
             ><el-option
               v-for="p in productOptions"
               :key="p.value"
-              :label="p.model"
+              :label="`${p.model || '-'} (${p.value})`"
               :value="p.model"
           /></el-select>
         </div>

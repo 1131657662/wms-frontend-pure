@@ -106,7 +106,7 @@ async function searchSupplier(keyword?: string) {
     const res = await api.get("/supplier/list", {
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 500,
         keyword: keyword || undefined,
         enabled: 1
       }
@@ -121,7 +121,7 @@ async function searchProduct(keyword?: string) {
   productLoading.value = true;
   try {
     const res = await api.get("/product/search", {
-      params: { keyword: keyword || undefined }
+      params: { keyword: keyword || undefined, pageSize: 500 }
     });
     productOptions.value = res.data || [];
   } finally {
@@ -133,7 +133,7 @@ async function searchVehicle(keyword?: string) {
   vehicleLoading.value = true;
   try {
     const res = await api.get("/vehicle/search", {
-      params: { keyword: keyword || undefined }
+      params: { keyword: keyword || undefined, pageSize: 500 }
     });
     vehicleOptions.value = res.data || [];
   } finally {

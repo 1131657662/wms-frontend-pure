@@ -26,6 +26,7 @@ const order = ref<any>(null);
 const details = ref<any[]>([]);
 const loading = ref(false);
 const adjusting = ref(false);
+const voiding = ref(false);
 const deleting = ref(false);
 const confirming = ref(false);
 
@@ -130,6 +131,24 @@ async function handleConfirm() {
   }
 }
 
+async function handleVoid() {
+  await ElMessageBox.confirm(
+    `确定作废该盘点单？作废后不可再调整库存。`,
+    "提示",
+    { type: "warning", confirmButtonText: "确定作废", confirmButtonClass: "el-button--danger" }
+  );
+  voiding.value = true;
+  try {
+    await api.post(`/stock/check_order/${route.params.id}/void`);
+    ElMessage.success("作废成功");
+    loadData();
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "作废失败");
+  } finally {
+    voiding.value = false;
+  }
+}
+
 async function handleAdjust() {
   await ElMessageBox.confirm(
     "确定按盘点单调整库存？将以实盘数更新库存并生成流水。",
@@ -190,6 +209,13 @@ onMounted(() => { loadData(); loadStatusDict(); });
             :loading="confirming"
             @click="handleConfirm"
             >确认</el-button
+          >
+          <el-button
+            v-if="order && order.status === 'confirmed'"
+            type="danger"
+            :loading="voiding"
+            @click="handleVoid"
+            >作废</el-button
           >
           <el-button
             v-if="order && order.status === 'confirmed'"

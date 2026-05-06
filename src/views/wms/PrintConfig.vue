@@ -72,7 +72,7 @@ function openDialog(row?: any) {
     isEdit.value = false;
     form.value = {
       template_name: "", business_type: "outbound", report_code: "",
-      output_format: "PDF", api_url: "http://localhost:8085/jmreport/exportReport",
+      output_format: "PDF", api_url: "",
       jimu_token: "", is_enabled: 1
     };
   }
@@ -215,7 +215,7 @@ onMounted(loadData);
         <el-form-item label="报表ID"><el-input v-model="form.report_code" placeholder="积木报表的报表ID" /></el-form-item>
         <el-form-item label="输出格式"><el-input v-model="form.output_format" placeholder="PDF" /></el-form-item>
         <el-form-item label="API地址">
-          <el-input v-model="form.api_url" placeholder="http://localhost:8085/jmreport/exportReport" />
+          <el-input v-model="form.api_url" placeholder="请输入积木报表 API 地址，例如 http://ip:8085/jmreport/exportReport" />
           <div class="mt-1 text-xs" :style="{ color: 'var(--el-text-color-placeholder)' }">积木报表导出接口地址，系统自动拼接 token 和 exportParams 参数</div>
         </el-form-item>
         <el-form-item label="认证Token">

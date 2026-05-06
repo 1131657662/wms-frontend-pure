@@ -83,7 +83,7 @@ async function searchCustomers(q: string) {
     return;
   }
   const res = await api.get("/customer/list", {
-    params: { keyword: q, pageSize: 50 }
+    params: { keyword: q, pageSize: 500 }
   });
   customerOptions.value = (res.data.list || []).map((c: any) => ({
     label: c.customer_name,
@@ -95,7 +95,7 @@ async function searchProducts(q: string) {
     productOptions.value = [];
     return;
   }
-  const res = await api.get("/product/search", { params: { keyword: q } });
+  const res = await api.get("/product/search", { params: { keyword: q, pageSize: 500 } });
   productOptions.value = (res.data || []).map((p: any) => ({
     label: `${p.product_code} / ${p.product_name}`,
     value: p.product_code,
@@ -108,7 +108,7 @@ async function searchVehicles(q: string) {
     vehicleOptions.value = [];
     return;
   }
-  const res = await api.get("/vehicle/search", { params: { keyword: q } });
+  const res = await api.get("/vehicle/search", { params: { keyword: q, pageSize: 500 } });
   vehicleOptions.value = (res.data || []).map((v: any) => ({
     label: v.plate_number,
     value: v.plate_number
@@ -801,8 +801,24 @@ onMounted(async () => {
             ><el-option
               v-for="p in productOptions"
               :key="p.value"
-              :label="p.name"
+              :label="`${p.name} (${p.value})`"
               :value="p.name" /></el-select
+        ></el-form-item>
+        <el-form-item label="型号"
+          ><el-select
+            v-model="drawerFilter.product_model"
+            clearable
+            filterable
+            remote
+            allow-create
+            :remote-method="searchProducts"
+            placeholder="输入关键词搜索"
+            class="w-full!"
+            ><el-option
+              v-for="p in productOptions"
+              :key="p.value"
+              :label="`${p.model || '-'} (${p.value})`"
+              :value="p.model" /></el-select
         ></el-form-item>
         <el-form-item label="状态"
           ><el-select
@@ -828,22 +844,6 @@ onMounted(async () => {
               :key="t.value"
               :label="t.label"
               :value="t.value" /></el-select
-        ></el-form-item>
-        <el-form-item label="型号"
-          ><el-select
-            v-model="drawerFilter.product_model"
-            clearable
-            filterable
-            remote
-            allow-create
-            :remote-method="searchProducts"
-            placeholder="输入关键词搜索"
-            class="w-full!"
-            ><el-option
-              v-for="p in productOptions"
-              :key="p.value"
-              :label="p.model"
-              :value="p.model" /></el-select
         ></el-form-item>
         <el-form-item label="车号"
           ><el-select

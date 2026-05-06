@@ -298,7 +298,7 @@ onMounted(fetchData);
             <EmptyState title="暂无仓库数据" description="调整筛选条件或点击新增" />
           </template>
           <template #capacity="{ row }">
-            {{ row.capacity != null ? Number(row.capacity).toFixed(2) : "-" }}
+            {{ row.capacity != null ? Number(row.capacity).toFixed(4) : "-" }}
           </template>
           <template #is_enabled="{ row }">
             <el-tag
@@ -375,7 +375,7 @@ onMounted(fetchData);
               <el-input-number
                 v-model="form.capacity"
                 :min="0"
-                :precision="2"
+                :precision="4"
                 controls-position="right"
                 class="w-full!"
               />

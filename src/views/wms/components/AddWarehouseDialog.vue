@@ -26,7 +26,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="容量(吨)">
-            <el-input-number v-model="form.capacity" :min="0" :precision="2" controls-position="right" class="w-full!" />
+            <el-input-number v-model="form.capacity" :min="0" :precision="4" controls-position="right" class="w-full!" />
           </el-form-item>
         </el-col>
         <el-col :span="24">

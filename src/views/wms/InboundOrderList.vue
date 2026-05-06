@@ -64,7 +64,7 @@ const headerCellStyle = {
 };
 
 const columns: any[] = [
-  { type: "selection", width: 40 },
+  { type: "selection", label: "选择", width: 40 },
   {
     type: "index",
     label: "#",
@@ -103,7 +103,7 @@ const columns: any[] = [
     align: "center"
   },
   { label: "件数合计", prop: "totalQty", width: 100, align: "right" },
-  { label: "吨位合计", prop: "totalWeight", width: 110, align: "right" },
+  { label: "吨位合计", prop: "totalWeight", slot: "totalWeight", width: 110, align: "right" },
   { label: "备注", prop: "remark", minWidth: 180, showOverflowTooltip: true },
   { label: "审核人", prop: "audit_by", width: 100 },
   { label: "审核时间", prop: "audit_time", slot: "audit_time", width: 170 },
@@ -646,6 +646,7 @@ onMounted(() => {
               >{{ statusMap[row.order_status] || row.order_status }}</el-tag
             >
           </template>
+          <template #totalWeight="{ row }">{{ Number(row.totalWeight || 0).toFixed(4) }}</template>
           <template #bill_type_code="{ row }">{{ billTypeMap[row.bill_type_code] || row.bill_type_code || "—" }}</template>
           <template #inbound_date="{ row }">{{ formatDate(row.inbound_date) }}</template>
           <template #audit_time="{ row }">{{

@@ -69,7 +69,7 @@ function initDetail() {
     product_code: "",
     product_name: "",
     product_model: "",
-    contract_no: "",
+    contract_no: "大客户协议",
     outbound_qty: null,
     outbound_weight: null,
     detail_remark: "",
@@ -110,7 +110,7 @@ async function searchCustomer(keyword?: string) {
   customerLoading.value = true;
   try {
     const res = await api.get("/customer/search", {
-      params: { keyword: keyword || undefined }
+      params: { keyword: keyword || undefined, pageSize: 500 }
     });
     customerOptions.value = res.data || [];
   } finally {
@@ -137,7 +137,7 @@ async function searchProduct(keyword?: string) {
   productLoading.value = true;
   try {
     const res = await api.get("/product/search", {
-      params: { keyword: keyword || undefined }
+      params: { keyword: keyword || undefined, pageSize: 500 }
     });
     productOptions.value = res.data || [];
   } finally {
@@ -149,7 +149,7 @@ async function searchVehicle(keyword?: string) {
   vehicleLoading.value = true;
   try {
     const res = await api.get("/vehicle/search", {
-      params: { keyword: keyword || undefined }
+      params: { keyword: keyword || undefined, pageSize: 500 }
     });
     vehicleOptions.value = res.data || [];
   } finally {
@@ -360,9 +360,6 @@ onMounted(async () => {
   await searchVehicle("");
   if (isEdit.value) {
     await loadData();
-  } else if (customerOptions.value.length > 0) {
-    form.customer_code = customerOptions.value[0].customer_code;
-    onCustomerChange(customerOptions.value[0].customer_code);
   }
 });
 </script>
@@ -493,8 +490,9 @@ onMounted(async () => {
       </div>
       <el-form :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="6">
+          <el-col :span="8">
             <el-form-item label="客户名称" prop="customer_code">
+              <el-tooltip :content="form.customer_name" placement="top" :disabled="!form.customer_name">
               <QuickAddSelect
                 v-model="form.customer_code"
                 :options="customerOptions"
@@ -508,32 +506,36 @@ onMounted(async () => {
                 @change="onCustomerChange"
                 @added="() => searchCustomer('')"
               />
+              </el-tooltip>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="8">
             <el-form-item label="客户地址">
               <el-input
                 :model-value="form.customer_address"
                 disabled
                 placeholder="选择客户后自动填充"
+                :title="form.customer_address"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="4">
             <el-form-item label="联系人">
               <el-input
                 :model-value="form.contact_person"
                 disabled
-                placeholder="选择客户后自动填充"
+                placeholder="自动填充"
+                :title="form.contact_person"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="4">
             <el-form-item label="电话">
               <el-input
                 :model-value="form.contact_phone"
                 disabled
-                placeholder="选择客户后自动填充"
+                placeholder="自动填充"
+                :title="form.contact_phone"
               />
             </el-form-item>
           </el-col>
@@ -594,7 +596,7 @@ onMounted(async () => {
         <el-table-column prop="product_model" label="型号" width="130" show-overflow-tooltip />
         <el-table-column label="合同号" width="130">
           <template #default="{ row }">
-            <el-input v-model="row.contract_no" />
+            <el-input v-model="row.contract_no" clearable />
           </template>
         </el-table-column>
         <el-table-column label="出库件数" width="140">

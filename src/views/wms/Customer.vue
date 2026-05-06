@@ -10,6 +10,8 @@ import Refresh from "~icons/ep/refresh";
 import Plus from "~icons/ep/plus";
 import EditPen from "~icons/ep/edit-pen";
 import Delete from "~icons/ep/delete";
+import Upload from "~icons/ep/upload";
+import Download from "~icons/ep/download";
 
 import TeamLine from "~icons/ri/team-line";
 import CheckboxCircleLine from "~icons/ri/checkbox-circle-line";
@@ -190,6 +192,52 @@ async function loadDict() {
   }
 }
 
+// ========== 导入 ==========
+const importDialogVisible = ref(false);
+const importing = ref(false);
+const importResult = ref<any>(null);
+const importFile = ref<File | null>(null);
+
+function handleFileChange(file: any) {
+  importFile.value = file.raw || file;
+}
+
+async function handleDownloadTemplate() {
+  try {
+    const resp = await api.get("/customer/template", { responseType: "blob" });
+    const url = URL.createObjectURL(resp as any);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "客户导入模板.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    ElMessage.error("模板下载失败");
+  }
+}
+
+async function handleImport() {
+  if (!importFile.value) {
+    ElMessage.warning("请选择 Excel 文件");
+    return;
+  }
+  importing.value = true;
+  importResult.value = null;
+  try {
+    const fd = new FormData();
+    fd.append("file", importFile.value);
+    const res = await api.post("/customer/import", fd, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+    importResult.value = res.data;
+    if (res.data.successCount > 0) fetchData();
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "导入失败");
+  } finally {
+    importing.value = false;
+  }
+}
+
 onMounted(() => {
   fetchData();
   loadDict();
@@ -268,6 +316,13 @@ onMounted(() => {
           size="default"
           @click="openDialog()"
           >新增客户</el-button
+        >
+        <el-button
+          type="success"
+          :icon="useRenderIcon(Upload)"
+          size="default"
+          @click="importDialogVisible = true"
+          >批量导入</el-button
         >
       </div>
     </div>
@@ -420,6 +475,65 @@ onMounted(() => {
             >保存</el-button
           >
         </div>
+      </template>
+    </el-dialog>
+
+    <!-- 批量导入弹窗 -->
+    <el-dialog
+      v-model="importDialogVisible"
+      title="批量导入客户"
+      width="520px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
+      <div class="flex items-center gap-3 mb-4">
+        <el-button plain :icon="useRenderIcon(Download)" @click="handleDownloadTemplate">
+          下载导入模板
+        </el-button>
+      </div>
+      <el-upload
+        drag
+        :auto-upload="false"
+        :on-change="handleFileChange"
+        :limit="1"
+        accept=".xlsx,.xls"
+      >
+        <el-icon class="text-3xl" :style="{ color: 'var(--el-text-color-secondary)' }">
+          <component :is="useRenderIcon(Upload)" />
+        </el-icon>
+        <div class="mt-2 text-sm" :style="{ color: 'var(--el-text-color-secondary)' }">
+          将 Excel 文件拖拽到此处，或<em :style="{ color: 'var(--el-color-primary)' }">点击上传</em>
+        </div>
+        <template #tip>
+          <div class="mt-1 text-xs" :style="{ color: 'var(--el-text-color-placeholder)' }">
+            仅支持 .xlsx / .xls 格式，每次最多导入一个文件
+          </div>
+        </template>
+      </el-upload>
+
+      <div v-if="importResult" class="mt-4">
+        <el-alert
+          :title="`导入完成：成功 ${importResult.successCount} 条，失败 ${importResult.failCount} 条`"
+          :type="importResult.failCount > 0 ? 'warning' : 'success'"
+          :closable="false"
+          show-icon
+        />
+        <div v-if="importResult.errors && importResult.errors.length > 0" class="mt-3">
+          <div class="text-sm font-medium mb-2" :style="{ color: 'var(--el-text-color-primary)' }">失败明细：</div>
+          <div
+            v-for="(err, i) in importResult.errors"
+            :key="i"
+            class="text-xs mb-1"
+            :style="{ color: 'var(--el-color-danger)' }"
+          >
+            第 {{ err.row }} 行：{{ err.errors.join('；') }}
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="importDialogVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="importing" @click="handleImport">开始导入</el-button>
       </template>
     </el-dialog>
   </div>
