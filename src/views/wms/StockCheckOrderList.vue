@@ -12,6 +12,7 @@ import Download from "~icons/ep/download";
 import Filter from "~icons/ep/filter";
 import Checked from "~icons/ep/checked";
 import Document from "~icons/ri/file-text-line";
+import PrintDropdown from "@/components/PrintDropdown";
 
 defineOptions({ name: "StockCheckOrderList" });
 const router = useRouter();
@@ -22,10 +23,14 @@ const loading = ref(false);
 const exporting = ref(false);
 const deleting = ref(0);
 const pagination = reactive({
-  total: 0, pageSize: Number(localStorage.getItem("page-size-StockCheckOrderList")) || 20, currentPage: 1, background: true,
+  total: 0,
+  pageSize: Number(localStorage.getItem("page-size-StockCheckOrderList")) || 20,
+  currentPage: 1,
+  background: true,
   pageSizes: [10, 20, 50, 100, 500, 1000]
 });
 const warehouses = ref<any[]>([]);
+const selectedRows = ref<any[]>([]);
 
 const statusMap = reactive<Record<string, string>>({});
 const statusType = reactive<Record<string, string>>({});
@@ -37,7 +42,9 @@ async function loadStatusDict() {
       statusMap[d.dict_value] = d.dict_label;
       statusType[d.dict_value] = d.remark || "info";
     }
-  } catch { /* 字典加载失败 */ }
+  } catch {
+    /* 字典加载失败 */
+  }
 }
 
 const statusFilterOptions = computed(() =>
@@ -55,50 +62,97 @@ const headerCellStyle = {
 const stats = computed(() => ({
   total: pagination.total,
   draft: dataList.value.filter((o: any) => o.status === "draft").length,
-  confirmed: dataList.value.filter((o: any) => o.status === "confirmed" || o.status === "adjusted").length
+  confirmed: dataList.value.filter(
+    (o: any) => o.status === "confirmed" || o.status === "adjusted"
+  ).length
 }));
 
 // ==================== 列定义 ====================
 const columns: any[] = [
-  { type: "index", label: "#", width: 56, index: (i: number) => (pagination.currentPage - 1) * pagination.pageSize + i + 1 },
+  { type: "selection", label: "选择", width: 40 },
+  {
+    type: "index",
+    label: "#",
+    width: 56,
+    index: (i: number) =>
+      (pagination.currentPage - 1) * pagination.pageSize + i + 1
+  },
   { label: "盘点单号", prop: "check_no", width: 180 },
   { label: "仓库", prop: "warehouse_name", width: 150 },
   { label: "状态", slot: "status", width: 90, align: "center" },
   { label: "备注", prop: "remark", minWidth: 200, showOverflowTooltip: true },
   { label: "创建人", prop: "create_by", width: 100 },
   { label: "创建时间", slot: "create_time", width: 170 },
-  { label: "操作", slot: "operation", width: 290, fixed: "right", align: "center" }
+  {
+    label: "操作",
+    slot: "operation",
+    width: 290,
+    fixed: "right",
+    align: "center"
+  }
 ];
 
 async function fetchData() {
   loading.value = true;
   try {
-    const params: any = { page: pagination.currentPage, pageSize: pagination.pageSize };
+    const params: any = {
+      page: pagination.currentPage,
+      pageSize: pagination.pageSize
+    };
     if (searchForm.keyword) params.keyword = searchForm.keyword;
     if (filters.warehouse_code) params.warehouse_code = filters.warehouse_code;
     if (filters.status) params.status = filters.status;
     const res = await api.get("/stock/check_order/list", { params });
     dataList.value = res.data.list;
     pagination.total = res.data.total;
-  } finally { loading.value = false; }
+    selectedRows.value = [];
+  } finally {
+    loading.value = false;
+  }
 }
 
-const onSearch = () => { pagination.currentPage = 1; fetchData(); };
+const onSearch = () => {
+  pagination.currentPage = 1;
+  fetchData();
+};
+const onSelectionChange = (rows: any[]) => {
+  selectedRows.value = rows;
+};
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-StockCheckOrderList", String(v)); pagination.pageSize = v; fetchData(); };
-const handleCurrentChange = (v: number) => { pagination.currentPage = v; fetchData(); };
+  localStorage.setItem("page-size-StockCheckOrderList", String(v));
+  pagination.pageSize = v;
+  fetchData();
+};
+const handleCurrentChange = (v: number) => {
+  pagination.currentPage = v;
+  fetchData();
+};
 
 async function loadWarehouses() {
-  try { warehouses.value = ((await api.get("/warehouse/list", { params: { pageSize: 1000, enabled: 1 } })).data.list || []); }
-  catch { /* empty */ }
+  try {
+    warehouses.value =
+      (
+        await api.get("/warehouse/list", {
+          params: { pageSize: 1000, enabled: 1 }
+        })
+      ).data.list || [];
+  } catch {
+    /* empty */
+  }
 }
 
 // ==================== 筛选抽屉 ====================
 const drawerVisible = ref(false);
 const filters = reactive({ warehouse_code: "", status: "" });
-const activeFilterCount = computed(() => (filters.warehouse_code ? 1 : 0) + (filters.status ? 1 : 0));
+const activeFilterCount = computed(
+  () => (filters.warehouse_code ? 1 : 0) + (filters.status ? 1 : 0)
+);
 
-function applyFilters() { pagination.currentPage = 1; drawerVisible.value = false; fetchData(); }
+function applyFilters() {
+  pagination.currentPage = 1;
+  drawerVisible.value = false;
+  fetchData();
+}
 function resetFilters() {
   Object.assign(filters, { warehouse_code: "", status: "" });
   searchForm.keyword = "";
@@ -108,7 +162,9 @@ function resetFilters() {
 }
 
 async function handleDelete(row: any) {
-  await ElMessageBox.confirm(`确定删除盘点单「${row.check_no}」？`, "提示", { type: "warning" });
+  await ElMessageBox.confirm(`确定删除盘点单「${row.check_no}」？`, "提示", {
+    type: "warning"
+  });
   deleting.value = row.id;
   try {
     await api.delete(`/stock/check_order/${row.id}`);
@@ -122,7 +178,11 @@ async function handleDelete(row: any) {
 }
 
 async function handleConfirm(row: any) {
-  await ElMessageBox.confirm(`确定确认盘点单「${row.check_no}」？确认后不可编辑。`, "提示", { type: "info" });
+  await ElMessageBox.confirm(
+    `确定确认盘点单「${row.check_no}」？确认后不可编辑。`,
+    "提示",
+    { type: "info" }
+  );
   await api.post(`/stock/check_order/${row.id}/confirm`);
   ElMessage.success("确认成功");
   fetchData();
@@ -132,7 +192,11 @@ async function handleVoid(row: any) {
   await ElMessageBox.confirm(
     `确定作废盘点单「${row.check_no}」？作废后不可再调整库存。`,
     "提示",
-    { type: "warning", confirmButtonText: "确定作废", confirmButtonClass: "el-button--danger" }
+    {
+      type: "warning",
+      confirmButtonText: "确定作废",
+      confirmButtonClass: "el-button--danger"
+    }
   );
   try {
     await api.post(`/stock/check_order/${row.id}/void`);
@@ -144,7 +208,11 @@ async function handleVoid(row: any) {
 }
 
 async function handleAdjust(row: any) {
-  await ElMessageBox.confirm(`确定按盘点单「${row.check_no}」调整库存？将以实盘数更新库存并生成流水。`, "提示", { type: "warning" });
+  await ElMessageBox.confirm(
+    `确定按盘点单「${row.check_no}」调整库存？将以实盘数更新库存并生成流水。`,
+    "提示",
+    { type: "warning" }
+  );
   await api.post(`/stock/check_order/${row.id}/adjust`);
   ElMessage.success("库存调整成功");
   fetchData();
@@ -157,10 +225,15 @@ async function handleExport() {
     if (searchForm.keyword) params.keyword = searchForm.keyword;
     if (filters.warehouse_code) params.warehouse_code = filters.warehouse_code;
     if (filters.status) params.status = filters.status;
-    const resp = await api.get("/stock/check_order/export", { params, responseType: "blob" });
+    const resp = await api.get("/stock/check_order/export", {
+      params,
+      responseType: "blob"
+    });
     const url = URL.createObjectURL(resp as any);
     const a = document.createElement("a");
-    a.href = url; a.download = "盘点单.xlsx"; a.click();
+    a.href = url;
+    a.download = "盘点单.xlsx";
+    a.click();
     URL.revokeObjectURL(url);
     ElMessage.success("导出成功");
   } catch (e: any) {
@@ -172,14 +245,25 @@ async function handleExport() {
 
 function formatTime(v: string) {
   if (!v) return "—";
-  return new Date(v).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(v)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
-onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
+onMounted(() => {
+  loadStatusDict();
+  fetchData();
+  loadWarehouses();
+});
 </script>
 
 <template>
@@ -188,38 +272,99 @@ onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
     <div class="flex gap-4 mb-4">
       <div
         v-for="card in [
-          { label: '盘点单总数', value: stats.total, color: 'var(--el-color-primary)', icon: Checked },
-          { label: '草稿', value: stats.draft, color: 'var(--el-color-info)', icon: Document },
-          { label: '已完成', value: stats.confirmed, color: '#67c23a', icon: AddFill }
+          {
+            label: '盘点单总数',
+            value: stats.total,
+            color: 'var(--el-color-primary)',
+            icon: Checked
+          },
+          {
+            label: '草稿',
+            value: stats.draft,
+            color: 'var(--el-color-info)',
+            icon: Document
+          },
+          {
+            label: '已完成',
+            value: stats.confirmed,
+            color: '#67c23a',
+            icon: AddFill
+          }
         ]"
         :key="card.label"
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ==================== 操作卡片 ==================== -->
-    <div
-      class="wms-card mb-4"
-    >
+    <div class="wms-card mb-4">
       <div :style="{ padding: '16px 20px' }">
-        <div class="flex items-center gap-2 mb-3 text-sm font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">
-          <span class="inline-block w-1 h-4 rounded" :style="{ background: 'var(--el-color-primary)' }" />
+        <div
+          class="flex items-center gap-2 mb-3 text-sm font-semibold"
+          :style="{ color: 'var(--el-text-color-primary)' }"
+        >
+          <span
+            class="inline-block w-1 h-4 rounded"
+            :style="{ background: 'var(--el-color-primary)' }"
+          />
           操作
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <el-button type="primary" :icon="useRenderIcon(AddFill)" @click="router.push('/stock-check/form')">新增盘点单</el-button>
-          <el-button plain :icon="useRenderIcon(Download)" :loading="exporting" @click="handleExport">导出 Excel</el-button>
-          <el-button plain :icon="useRenderIcon(Filter)" @click="drawerVisible = true">
-            筛选<template v-if="activeFilterCount">&nbsp;{{ activeFilterCount }}</template>
+          <el-button
+            type="primary"
+            :icon="useRenderIcon(AddFill)"
+            @click="router.push('/stock-check/form')"
+            >新增盘点单</el-button
+          >
+          <PrintDropdown
+            page-code="stock_check_order"
+            :business-id="selectedRows[0]?.check_no || ''"
+            :disabled="selectedRows.length !== 1"
+          />
+          <el-button
+            plain
+            :icon="useRenderIcon(Download)"
+            :loading="exporting"
+            @click="handleExport"
+            >导出 Excel</el-button
+          >
+          <el-button
+            plain
+            :icon="useRenderIcon(Filter)"
+            @click="drawerVisible = true"
+          >
+            筛选<template v-if="activeFilterCount"
+              >&nbsp;{{ activeFilterCount }}</template
+            >
           </el-button>
           <div class="flex-1" />
           <el-input
@@ -233,48 +378,120 @@ onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
           />
         </div>
       </div>
-      <div class="flex items-center" :style="{ padding: '10px 20px', borderTop: '1px solid var(--el-border-color-lighter)' }">
-        <span class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">
-          共 <strong :style="{ color: 'var(--el-text-color-primary)' }">{{ pagination.total }}</strong> 个盘点单
+      <div
+        class="flex items-center"
+        :style="{
+          padding: '10px 20px',
+          borderTop: '1px solid var(--el-border-color-lighter)'
+        }"
+      >
+        <span
+          class="text-xs"
+          :style="{ color: 'var(--el-text-color-secondary)' }"
+        >
+          共
+          <strong :style="{ color: 'var(--el-text-color-primary)' }">{{
+            pagination.total
+          }}</strong>
+          个盘点单
         </span>
       </div>
     </div>
 
     <!-- ==================== 表格 ==================== -->
-    <PureTableBar title="盘点单管理" :columns="columns" storage-key="StockCheckOrderList" @refresh="onSearch">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="盘点单管理"
+      :columns="columns"
+      storage-key="StockCheckOrderList"
+      @refresh="onSearch"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :header-cell-style="headerCellStyle"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
+          @selection-change="onSelectionChange"
         >
           <template #empty>
             <EmptyState title="暂无盘点单数据" />
           </template>
           <template #status="{ row }">
-            <el-tag :type="statusType[row.status] || 'info'" effect="plain" size="small">{{ statusMap[row.status] || row.status }}</el-tag>
+            <el-tag
+              :type="statusType[row.status] || 'info'"
+              effect="plain"
+              size="small"
+              >{{ statusMap[row.status] || row.status }}</el-tag
+            >
           </template>
-          <template #create_time="{ row }">{{ formatTime(row.create_time) }}</template>
+          <template #create_time="{ row }">{{
+            formatTime(row.create_time)
+          }}</template>
           <template #operation="{ row }">
             <div class="flex justify-center gap-1">
-              <el-button link type="primary" size="small" @click="router.push(`/stock-check/detail/${row.id}`)">查看</el-button>
-              <el-button v-if="row.status === 'draft'" link type="primary" size="small" @click="router.push(`/stock-check/form/${row.id}`)">编辑</el-button>
-              <el-button v-if="row.status === 'draft'" type="danger" size="small" :loading="deleting === row.id" @click="handleDelete(row)">删除</el-button>
-              <el-button v-if="row.status === 'draft'" link type="warning" size="small" @click="handleConfirm(row)">确认</el-button>
-              <el-button v-if="row.status === 'confirmed'" link type="danger" size="small" @click="handleVoid(row)">作废</el-button>
-              <el-button v-if="row.status === 'confirmed'" link type="success" size="small" @click="handleAdjust(row)">调整</el-button>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                @click="router.push(`/stock-check/detail/${row.id}`)"
+                >查看</el-button
+              >
+              <el-button
+                v-if="row.status === 'draft'"
+                link
+                type="primary"
+                size="small"
+                @click="router.push(`/stock-check/form/${row.id}`)"
+                >编辑</el-button
+              >
+              <el-button
+                v-if="row.status === 'draft'"
+                type="danger"
+                size="small"
+                :loading="deleting === row.id"
+                @click="handleDelete(row)"
+                >删除</el-button
+              >
+              <el-button
+                v-if="row.status === 'draft'"
+                link
+                type="warning"
+                size="small"
+                @click="handleConfirm(row)"
+                >确认</el-button
+              >
+              <el-button
+                v-if="row.status === 'confirmed'"
+                link
+                type="danger"
+                size="small"
+                @click="handleVoid(row)"
+                >作废</el-button
+              >
+              <el-button
+                v-if="row.status === 'confirmed'"
+                link
+                type="success"
+                size="small"
+                @click="handleAdjust(row)"
+                >调整</el-button
+              >
             </div>
           </template>
         </pure-table>
@@ -285,19 +502,36 @@ onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
     <el-drawer v-model="drawerVisible" title="筛选条件" size="340px">
       <el-form :model="filters" label-width="100px">
         <el-form-item label="仓库">
-          <el-select v-model="filters.warehouse_code" clearable filterable class="w-full!">
-            <el-option v-for="w in warehouses" :key="w.warehouse_code" :label="w.warehouse_name" :value="w.warehouse_code" />
+          <el-select
+            v-model="filters.warehouse_code"
+            clearable
+            filterable
+            class="w-full!"
+          >
+            <el-option
+              v-for="w in warehouses"
+              :key="w.warehouse_code"
+              :label="w.warehouse_name"
+              :value="w.warehouse_code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filters.status" clearable class="w-full!">
-            <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
+            <el-option
+              v-for="s in statusFilterOptions"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="drawerVisible = false">关闭</el-button>
-        <el-button type="primary" :loading="loading" @click="applyFilters">查询</el-button>
+        <el-button type="primary" :loading="loading" @click="applyFilters"
+          >查询</el-button
+        >
         <el-button @click="resetFilters">重置</el-button>
       </template>
     </el-drawer>
@@ -309,6 +543,7 @@ onMounted(() => { loadStatusDict(); fetchData(); loadWarehouses(); });
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

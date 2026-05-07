@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
+import PrintDropdown from "@/components/PrintDropdown";
 import * as XLSX from "xlsx";
 
 defineOptions({ name: "OutboundOrderDetail" });
@@ -21,7 +22,9 @@ async function loadStatusDict() {
       statusMap[d.dict_value] = d.dict_label;
       statusType[d.dict_value] = d.remark || "info";
     }
-  } catch { /* 字典加载失败 */ }
+  } catch {
+    /* 字典加载失败 */
+  }
 }
 
 async function loadBillTypeDict() {
@@ -30,7 +33,9 @@ async function loadBillTypeDict() {
     for (const d of res.data || []) {
       billTypeMap[d.dict_value] = d.dict_label;
     }
-  } catch { /* 字典加载失败 */ }
+  } catch {
+    /* 字典加载失败 */
+  }
 }
 
 const order = ref<any>(null);
@@ -39,7 +44,6 @@ const loading = ref(false);
 const auditing = ref(false);
 const reverting = ref(false);
 const deleting = ref(false);
-const printing = ref(false);
 const exporting = ref(false);
 
 const totalQty = computed(() =>
@@ -58,11 +62,18 @@ const headerCellStyle = {
 
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 function getDetailSummary({ columns }: any) {
@@ -85,23 +96,6 @@ async function loadData() {
     details.value = res.data.details || [];
   } finally {
     loading.value = false;
-  }
-}
-
-async function handlePrint() {
-  printing.value = true;
-  try {
-    const res = await api.post(
-      `/print/outbound/${order.value.order_no}`,
-      {},
-      { responseType: "blob" }
-    );
-    const blob = new Blob([res as any], { type: "application/pdf" });
-    window.open(URL.createObjectURL(blob), "_blank");
-  } catch {
-    ElMessage.error("打印失败");
-  } finally {
-    printing.value = false;
   }
 }
 
@@ -221,7 +215,11 @@ async function handleRevert() {
   }
 }
 
-onMounted(() => { loadData(); loadStatusDict(); loadBillTypeDict(); });
+onMounted(() => {
+  loadData();
+  loadStatusDict();
+  loadBillTypeDict();
+});
 </script>
 
 <template>
@@ -250,9 +248,11 @@ onMounted(() => { loadData(); loadStatusDict(); loadBillTypeDict(); });
         </div>
         <div class="flex items-center gap-2">
           <el-button @click="router.back()">返回</el-button>
-          <el-button type="primary" :loading="printing" @click="handlePrint"
-            >打印</el-button
-          >
+          <PrintDropdown
+            v-if="order"
+            page-code="outbound_order"
+            :business-id="order.order_no"
+          />
           <el-button type="success" :loading="exporting" @click="handleExport"
             >导出 Excel</el-button
           >
@@ -352,11 +352,7 @@ onMounted(() => { loadData(); loadStatusDict(); loadBillTypeDict(); });
     </div>
 
     <!-- 明细信息卡片 -->
-    <div
-      v-loading="loading"
-      class="wms-card"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div v-loading="loading" class="wms-card" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -366,7 +362,8 @@ onMounted(() => { loadData(); loadStatusDict(); loadBillTypeDict(); });
           :style="{ background: 'var(--el-color-primary)' }"
         />明细信息
       </div>
-      <el-table border
+      <el-table
+        border
         :data="details"
         stripe
         show-summary
@@ -376,8 +373,18 @@ onMounted(() => { loadData(); loadStatusDict(); loadBillTypeDict(); });
       >
         <el-table-column type="index" label="#" width="50" align="center" />
         <el-table-column prop="product_code" label="产品编码" width="130" />
-        <el-table-column prop="product_name" label="产品名称" width="130" show-overflow-tooltip />
-        <el-table-column prop="product_model" label="型号" width="130" show-overflow-tooltip />
+        <el-table-column
+          prop="product_name"
+          label="产品名称"
+          width="130"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="product_model"
+          label="型号"
+          width="130"
+          show-overflow-tooltip
+        />
         <el-table-column prop="contract_no" label="合同号" width="120" />
         <el-table-column
           prop="outbound_qty"

@@ -11,12 +11,12 @@ import * as XLSX from "xlsx";
 import AddFill from "~icons/ri/add-circle-line";
 import View from "~icons/ep/view";
 import Edit from "~icons/ep/edit-pen";
-import Printer from "~icons/ep/printer";
 import Download from "~icons/ep/download";
 import Filter from "~icons/ep/filter";
 import ArrowDown from "~icons/ep/arrow-down";
 import CircleCheck from "~icons/ep/circle-check";
 import Clock from "~icons/ep/clock";
+import PrintDropdown from "@/components/PrintDropdown";
 
 defineOptions({ name: "OutboundOrderList" });
 const router = useRouter();
@@ -46,7 +46,9 @@ async function loadStatusDict() {
       statusMap[d.dict_value] = d.dict_label;
       statusType[d.dict_value] = d.remark || "info";
     }
-  } catch { /* 字典加载失败 */ }
+  } catch {
+    /* 字典加载失败 */
+  }
 }
 
 const statusFilterOptions = computed(() =>
@@ -78,10 +80,26 @@ const columns: any[] = [
     width: 170,
     showOverflowTooltip: true
   },
-  { label: "单据类型", prop: "bill_type_code", slot: "bill_type_code", width: 110, showOverflowTooltip: true },
-  { label: "出库日期", prop: "outbound_date", slot: "outbound_date", width: 110 },
+  {
+    label: "单据类型",
+    prop: "bill_type_code",
+    slot: "bill_type_code",
+    width: 110,
+    showOverflowTooltip: true
+  },
+  {
+    label: "出库日期",
+    prop: "outbound_date",
+    slot: "outbound_date",
+    width: 110
+  },
   { label: "车号", prop: "vehicle_no", width: 120, showOverflowTooltip: true },
-  { label: "柜号", prop: "container_no", width: 100, showOverflowTooltip: true },
+  {
+    label: "柜号",
+    prop: "container_no",
+    width: 100,
+    showOverflowTooltip: true
+  },
   {
     label: "仓库",
     prop: "warehouse_name",
@@ -94,8 +112,18 @@ const columns: any[] = [
     width: 130,
     showOverflowTooltip: true
   },
-  { label: "联系人", prop: "contact_person", width: 100, showOverflowTooltip: true },
-  { label: "电话", prop: "contact_phone", width: 120, showOverflowTooltip: true },
+  {
+    label: "联系人",
+    prop: "contact_person",
+    width: 100,
+    showOverflowTooltip: true
+  },
+  {
+    label: "电话",
+    prop: "contact_phone",
+    width: 120,
+    showOverflowTooltip: true
+  },
   {
     label: "状态",
     prop: "order_status",
@@ -104,7 +132,13 @@ const columns: any[] = [
     align: "center"
   },
   { label: "件数合计", prop: "totalQty", width: 100, align: "right" },
-  { label: "吨位合计", prop: "totalWeight", slot: "totalWeight", width: 110, align: "right" },
+  {
+    label: "吨位合计",
+    prop: "totalWeight",
+    slot: "totalWeight",
+    width: 110,
+    align: "right"
+  },
   { label: "备注", prop: "remark", minWidth: 180, showOverflowTooltip: true },
   { label: "审核人", prop: "audit_by", width: 100 },
   { label: "审核时间", prop: "audit_time", slot: "audit_time", width: 170 },
@@ -158,7 +192,7 @@ async function fetchData() {
 }
 
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-OutboundOrderList", String(v));
+  localStorage.setItem("page-size-OutboundOrderList", String(v));
   pagination.pageSize = v;
   fetchData();
 };
@@ -233,9 +267,26 @@ const activeFilterCount = computed(() => {
 });
 
 const statsCards = computed(() => [
-  { label: "草稿", value: dataList.value.filter((r: any) => r.order_status === "draft").length, color: "var(--el-color-info)", icon: Edit },
-  { label: "已提交", value: dataList.value.filter((r: any) => r.order_status === "submit").length, color: "var(--el-color-warning)", icon: Clock },
-  { label: "已审核", value: dataList.value.filter((r: any) => r.order_status === "audited").length, color: "var(--el-color-success)", icon: CircleCheck }
+  {
+    label: "草稿",
+    value: dataList.value.filter((r: any) => r.order_status === "draft").length,
+    color: "var(--el-color-info)",
+    icon: Edit
+  },
+  {
+    label: "已提交",
+    value: dataList.value.filter((r: any) => r.order_status === "submit")
+      .length,
+    color: "var(--el-color-warning)",
+    icon: Clock
+  },
+  {
+    label: "已审核",
+    value: dataList.value.filter((r: any) => r.order_status === "audited")
+      .length,
+    color: "var(--el-color-success)",
+    icon: CircleCheck
+  }
 ]);
 
 async function loadCustomers() {
@@ -333,7 +384,11 @@ async function handleBatchAudit() {
   if (selectedRows.value.length === 0) return;
   batchActing.value = true;
   try {
-    const canOperate = await confirmBatchOp(selectedRows.value, "submit", "审核");
+    const canOperate = await confirmBatchOp(
+      selectedRows.value,
+      "submit",
+      "审核"
+    );
     if (!canOperate) return;
     const items = canOperate.map((r: any) => ({
       id: r.id,
@@ -363,7 +418,11 @@ async function handleBatchSubmit() {
   if (selectedRows.value.length === 0) return;
   batchActing.value = true;
   try {
-    const canOperate = await confirmBatchOp(selectedRows.value, "draft", "提交");
+    const canOperate = await confirmBatchOp(
+      selectedRows.value,
+      "draft",
+      "提交"
+    );
     if (!canOperate) return;
     let successCount = 0;
     const failedList: string[] = [];
@@ -468,12 +527,14 @@ async function handleExportCommand(command: string) {
       }
       const params: any = {};
       if (filters.order_no) params.order_no = filters.order_no;
-      if (filters.bill_type_code) params.bill_type_code = filters.bill_type_code;
+      if (filters.bill_type_code)
+        params.bill_type_code = filters.bill_type_code;
       if (filters.dateRange) {
         params.outbound_date_start = filters.dateRange[0];
         params.outbound_date_end = filters.dateRange[1];
       }
-      if (filters.warehouse_code) params.warehouse_code = filters.warehouse_code;
+      if (filters.warehouse_code)
+        params.warehouse_code = filters.warehouse_code;
       if (filters.order_status) params.order_status = filters.order_status;
       if (filters.vehicle_no) params.vehicle_no = filters.vehicle_no;
       if (filters.container_no) params.container_no = filters.container_no;
@@ -491,36 +552,36 @@ async function handleExportCommand(command: string) {
   }
 }
 
-async function handlePrint(row: any) {
-  try {
-    const res = await api.post(
-      `/print/outbound/${row.order_no}`,
-      {},
-      { responseType: "blob" }
-    );
-    const blob = new Blob([res as any], { type: "application/pdf" });
-    window.open(URL.createObjectURL(blob), "_blank");
-  } catch {
-    ElMessage.error("打印请求失败");
-  }
-}
-
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/outbound_type");
     const list = res.data || [];
-    billTypeOptions.value = list.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
-    for (const d of list) { billTypeMap[d.dict_value] = d.dict_label; }
-  } catch { /* 字典加载失败使用空数组 */ }
+    billTypeOptions.value = list.map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+    for (const d of list) {
+      billTypeMap[d.dict_value] = d.dict_label;
+    }
+  } catch {
+    /* 字典加载失败使用空数组 */
+  }
 }
 
 onMounted(() => {
@@ -542,21 +603,38 @@ onMounted(() => {
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 顶部操作栏 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -603,6 +681,11 @@ onMounted(() => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <PrintDropdown
+          page-code="outbound_order"
+          :business-id="selectedRows[0]?.order_no || ''"
+          :disabled="selectedRows.length !== 1"
+        />
         <el-button plain :icon="useRenderIcon(Filter)" @click="openDrawer">
           筛选<template v-if="activeFilterCount"
             >&nbsp;{{ activeFilterCount }}</template
@@ -612,21 +695,32 @@ onMounted(() => {
     </div>
 
     <!-- 表格区域 -->
-    <PureTableBar title="出库单管理" :columns="columns" storage-key="OutboundOrderList" @refresh="fetchData">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey" border
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="出库单管理"
+      :columns="columns"
+      storage-key="OutboundOrderList"
+      @refresh="fetchData"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           ref="tableRef"
+          border
           row-key="id"
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :header-cell-style="headerCellStyle"
           :row-class-name="getRowClassName"
           @row-click="handleRowClick"
@@ -635,7 +729,10 @@ onMounted(() => {
           @selection-change="onSelectionChange"
         >
           <template #empty>
-            <EmptyState title="暂无出库单数据" description="调整筛选条件或点击新增" />
+            <EmptyState
+              title="暂无出库单数据"
+              description="调整筛选条件或点击新增"
+            />
           </template>
           <template #order_status="{ row }">
             <el-tag
@@ -645,9 +742,15 @@ onMounted(() => {
               >{{ statusMap[row.order_status] || row.order_status }}</el-tag
             >
           </template>
-          <template #totalWeight="{ row }">{{ Number(row.totalWeight || 0).toFixed(4) }}</template>
-          <template #bill_type_code="{ row }">{{ billTypeMap[row.bill_type_code] || row.bill_type_code || "—" }}</template>
-          <template #outbound_date="{ row }">{{ formatDate(row.outbound_date) }}</template>
+          <template #totalWeight="{ row }">{{
+            Number(row.totalWeight || 0).toFixed(4)
+          }}</template>
+          <template #bill_type_code="{ row }">{{
+            billTypeMap[row.bill_type_code] || row.bill_type_code || "—"
+          }}</template>
+          <template #outbound_date="{ row }">{{
+            formatDate(row.outbound_date)
+          }}</template>
           <template #audit_time="{ row }">{{
             formatTime(row.audit_time)
           }}</template>
@@ -674,14 +777,6 @@ onMounted(() => {
                 :icon="useRenderIcon(Edit)"
                 @click="router.push(`/outbound/form/${row.id}`)"
                 >编辑</el-button
-              >
-              <el-button
-                link
-                type="primary"
-                size="small"
-                :icon="useRenderIcon(Printer)"
-                @click="handlePrint(row)"
-                >打印</el-button
               >
             </div>
           </template>
@@ -714,7 +809,12 @@ onMounted(() => {
             placeholder="全部"
             clearable
           >
-            <el-option v-for="t in billTypeOptions" :key="t.value" :label="t.label" :value="t.value" />
+            <el-option
+              v-for="t in billTypeOptions"
+              :key="t.value"
+              :label="t.label"
+              :value="t.value"
+            />
           </el-select>
         </div>
         <div class="drawer-field">
@@ -848,7 +948,12 @@ onMounted(() => {
             placeholder="全部"
             clearable
           >
-            <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
+            <el-option
+              v-for="s in statusFilterOptions"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
           </el-select>
         </div>
         <div class="drawer-field">
@@ -872,7 +977,9 @@ onMounted(() => {
       <template #footer>
         <div class="drawer-footer">
           <el-button @click="resetFilters">重置</el-button>
-          <el-button type="primary" :loading="loading" @click="applyFilters">查询</el-button>
+          <el-button type="primary" :loading="loading" @click="applyFilters"
+            >查询</el-button
+          >
         </div>
       </template>
     </el-drawer>
