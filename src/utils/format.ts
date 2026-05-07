@@ -170,3 +170,48 @@ export function formatVehicleStatus(
 ): StatusResult {
   return toStatusResult(v, VEHICLE_STATUS_MAP, VEHICLE_STATUS_TYPE);
 }
+
+// ===================================================================
+// 业务类型 / 单据类型映射 — 仪表盘 DocTable & ActivityTimeline
+// ===================================================================
+
+/** 单据类型 → 中文（最近业务单据） */
+export const DOC_TYPE_MAP: Record<string, string> = {
+  inbound: "入库单",
+  outbound: "出库单",
+  check: "盘点单"
+};
+
+/** 单据类型 → el-tag type */
+export const DOC_TYPE_TAG: Record<string, string> = {
+  inbound: "primary",
+  outbound: "success",
+  check: "warning"
+};
+
+/** 业务类型 → 中文（操作日志/动态） */
+export const BUSINESS_TYPE_MAP: Record<string, string> = {
+  inbound: "入库",
+  outbound: "出库",
+  stock: "库存",
+  stock_check: "盘点",
+  product: "商品",
+  product_category: "商品分类",
+  warehouse: "仓库",
+  customer: "客户",
+  supplier: "供应商",
+  vehicle: "车辆",
+  user: "用户",
+  role: "角色"
+};
+
+/** 单据类型格式化 */
+export function formatDocType(v: string | null | undefined): StatusResult {
+  return toStatusResult(v, DOC_TYPE_MAP, DOC_TYPE_TAG);
+}
+
+/** 业务类型格式化（无 tag type 映射，统一用 info） */
+export function formatBusinessType(v: string | null | undefined): string {
+  if (!v) return "—";
+  return BUSINESS_TYPE_MAP[v] || v;
+}

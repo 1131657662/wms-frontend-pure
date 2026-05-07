@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { formatBusinessType } from "@/utils/format";
+
 defineOptions({ name: "ActivityTimeline" });
 
 interface Activity {
@@ -35,7 +37,7 @@ function timeAgo(t: string | Date) {
         :color="idx === 0 ? 'var(--el-color-primary)' : 'var(--el-color-info)'"
         size="large"
       >
-        <p class="timeline-text">{{ item.keys?.[0] || '' }}</p>
+        <p class="timeline-text">{{ item.keys?.[0] || "" }}</p>
         <el-tag
           v-if="item.keys?.[1]"
           size="small"
@@ -43,7 +45,7 @@ function timeAgo(t: string | Date) {
           round
           class="timeline-tag"
         >
-          {{ item.keys[1] }}
+          {{ formatBusinessType(item.keys[1]) }}
         </el-tag>
       </el-timeline-item>
     </el-timeline>
@@ -52,20 +54,21 @@ function timeAgo(t: string | Date) {
 </template>
 
 <style scoped>
-
 .timeline-wrapper :deep(.el-timeline-item__timestamp) {
   font-size: 12px;
   color: var(--el-text-color-placeholder);
 }
 
 .timeline-text {
-  font-size: 13px;
-  color: var(--el-text-color-primary);
   margin: 0;
+  font-size: 13px;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
 }
 
-.timeline-tag { margin-top: 6px; }
+.timeline-tag {
+  margin-top: 6px;
+}
 
 .timeline-empty {
   font-size: 13px;

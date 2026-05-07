@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { reactive, onMounted } from "vue";
-import api from "@/api/wms";
-import { formatOrderStatus } from "@/utils/format";
+import { formatOrderStatus, formatDocType } from "@/utils/format";
 
 defineOptions({ name: "DocTable" });
 
@@ -9,23 +7,6 @@ defineProps<{
   data: any[];
   loading?: boolean;
 }>();
-
-const docTypeText = reactive<Record<string, string>>({});
-const docTypeTag = reactive<Record<string, string>>({});
-
-async function loadDicts() {
-  try {
-    const docRes = await api.get("/sys/dict/data/doc_type");
-    for (const d of docRes.data || []) {
-      docTypeText[d.dict_value] = d.dict_label;
-      docTypeTag[d.dict_value] = d.remark || "info";
-    }
-  } catch {
-    /* 字典加载失败 */
-  }
-}
-
-onMounted(loadDicts);
 
 function formatTime(t: string) {
   if (!t) return "";
@@ -57,11 +38,11 @@ function formatTime(t: string) {
         <el-table-column label="类型" width="90" align="center">
           <template #default="{ row }">
             <el-tag
-              :type="docTypeTag[row.doc_type] || 'info'"
+              :type="formatDocType(row.doc_type).type"
               size="small"
               effect="plain"
             >
-              {{ docTypeText[row.doc_type] || row.doc_type }}
+              {{ formatDocType(row.doc_type).label }}
             </el-tag>
           </template>
         </el-table-column>
