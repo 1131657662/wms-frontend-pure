@@ -13,6 +13,7 @@ import Filter from "~icons/ep/filter";
 import Checked from "~icons/ep/checked";
 import Document from "~icons/ri/file-text-line";
 import PrintDropdown from "@/components/PrintDropdown";
+import { formatCheckStatus, CHECK_STATUS_MAP } from "@/utils/format";
 
 defineOptions({ name: "StockCheckOrderList" });
 const router = useRouter();
@@ -32,23 +33,8 @@ const pagination = reactive({
 const warehouses = ref<any[]>([]);
 const selectedRows = ref<any[]>([]);
 
-const statusMap = reactive<Record<string, string>>({});
-const statusType = reactive<Record<string, string>>({});
-
-async function loadStatusDict() {
-  try {
-    const res = await api.get("/sys/dict/data/stock_check_status");
-    for (const d of res.data || []) {
-      statusMap[d.dict_value] = d.dict_label;
-      statusType[d.dict_value] = d.remark || "info";
-    }
-  } catch {
-    /* 字典加载失败 */
-  }
-}
-
 const statusFilterOptions = computed(() =>
-  Object.entries(statusMap).map(([value, label]) => ({ label, value }))
+  Object.entries(CHECK_STATUS_MAP).map(([value, label]) => ({ label, value }))
 );
 
 const headerCellStyle = {
@@ -260,7 +246,6 @@ function formatTime(v: string) {
 }
 
 onMounted(() => {
-  loadStatusDict();
   fetchData();
   loadWarehouses();
 });
@@ -420,11 +405,11 @@ onMounted(() => {
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          :header-cell-style="headerCellStyle"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :header-cell-style="headerCellStyle"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
           @selection-change="onSelectionChange"
@@ -434,10 +419,10 @@ onMounted(() => {
           </template>
           <template #status="{ row }">
             <el-tag
-              :type="statusType[row.status] || 'info'"
+              :type="formatCheckStatus(row.status).type"
               effect="plain"
               size="small"
-              >{{ statusMap[row.status] || row.status }}</el-tag
+              >{{ formatCheckStatus(row.status).label }}</el-tag
             >
           </template>
           <template #create_time="{ row }">{{

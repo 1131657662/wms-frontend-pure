@@ -4,7 +4,11 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
-import { formatDate } from "@/utils/format";
+import {
+  formatDate,
+  formatOrderStatus,
+  ORDER_STATUS_MAP
+} from "@/utils/format";
 import Calendar from "~icons/ri/calendar-2-line";
 import OfficeBuilding from "~icons/ep/office-building";
 import Search from "~icons/ep/search";
@@ -57,21 +61,8 @@ const drawerFilter = reactive({
   keyword: ""
 });
 
-const statusMap = reactive<Record<string, string>>({});
-const statusTypeMap = reactive<Record<string, string>>({});
-
-async function loadStatusDict() {
-  try {
-    const res = await api.get("/sys/dict/data/order_status");
-    for (const d of res.data || []) {
-      statusMap[d.dict_value] = d.dict_label;
-      statusTypeMap[d.dict_value] = d.remark || "info";
-    }
-  } catch { /* 字典加载失败 */ }
-}
-
 const statusFilterOptions = computed(() =>
-  Object.entries(statusMap).map(([value, label]) => ({ label, value }))
+  Object.entries(ORDER_STATUS_MAP).map(([value, label]) => ({ label, value }))
 );
 
 const billTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -102,7 +93,9 @@ async function searchProducts(q: string) {
     productOptions.value = [];
     return;
   }
-  const res = await api.get("/product/search", { params: { keyword: q, pageSize: 500 } });
+  const res = await api.get("/product/search", {
+    params: { keyword: q, pageSize: 500 }
+  });
   productOptions.value = (res.data || []).map((p: any) => ({
     label: `${p.product_code} / ${p.product_name}`,
     value: p.product_code,
@@ -115,7 +108,9 @@ async function searchVehicles(q: string) {
     vehicleOptions.value = [];
     return;
   }
-  const res = await api.get("/vehicle/search", { params: { keyword: q, pageSize: 500 } });
+  const res = await api.get("/vehicle/search", {
+    params: { keyword: q, pageSize: 500 }
+  });
   vehicleOptions.value = (res.data || []).map((v: any) => ({
     label: v.plate_number,
     value: v.plate_number
@@ -150,7 +145,7 @@ const filterTags = computed(() => {
     tags.push({
       source: "quick",
       key: "order_status",
-      label: `状态: ${statusMap[quickFilter.order_status]}`
+      label: `状态: ${formatOrderStatus(quickFilter.order_status).label}`
     });
   if (quickFilter.keyword)
     tags.push({
@@ -232,7 +227,7 @@ const filterTags = computed(() => {
     tags.push({
       source: "drawer",
       key: "order_status",
-      label: `状态: ${statusMap[drawerFilter.order_status]}`
+      label: `状态: ${formatOrderStatus(drawerFilter.order_status).label}`
     });
   if (drawerFilter.create_by)
     tags.push({
@@ -464,7 +459,7 @@ function onPageChange(p: number) {
   fetchData();
 }
 function onPageSizeChange(s: number) {
-    localStorage.setItem("page-size-InboundDetail", String(s));
+  localStorage.setItem("page-size-InboundDetail", String(s));
   pagination.pageSize = s;
   pagination.currentPage = 1;
   fetchData();
@@ -498,9 +493,19 @@ function resetDrawer() {
 
 const hasAnyFilter = computed(() => filterTags.value.length > 0);
 const statsCards = computed(() => [
-  { label: "总记录数", value: pagination.total || list.value.length, color: "var(--el-color-primary)", icon: Download },
+  {
+    label: "总记录数",
+    value: pagination.total || list.value.length,
+    color: "var(--el-color-primary)",
+    icon: Download
+  },
   { label: "本页", value: list.value.length, color: "#67c23a", icon: Box },
-  { label: "筛选", value: filterTags.value.length || 0, color: "var(--el-color-info)", icon: Filter }
+  {
+    label: "筛选",
+    value: filterTags.value.length || 0,
+    color: "var(--el-color-info)",
+    icon: Filter
+  }
 ]);
 
 const exportFileName = computed(() => {
@@ -536,25 +541,38 @@ async function exportData() {
 
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    const blist = (res.data || []);
-    billTypeOptions.value = blist.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
-    for (const d of blist) { billTypeMap[d.dict_value] = d.dict_label; }
-  } catch { /* 字典加载失败使用空数组 */ }
+    const blist = res.data || [];
+    billTypeOptions.value = blist.map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+    for (const d of blist) {
+      billTypeMap[d.dict_value] = d.dict_label;
+    }
+  } catch {
+    /* 字典加载失败使用空数组 */
+  }
 }
 
 onMounted(async () => {
   loadDict();
-  loadStatusDict();
   const [whRes, spRes] = await Promise.all([
     api.get("/warehouse/list", { params: { pageSize: 999 } }),
     api.get("/supplier/list", { params: { pageSize: 999 } })
@@ -573,21 +591,38 @@ onMounted(async () => {
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 筛选卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -643,7 +678,12 @@ onMounted(async () => {
               placeholder="请选择"
               class="w-28!"
             >
-              <el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" />
+              <el-option
+                v-for="s in statusFilterOptions"
+                :key="s.value"
+                :label="s.label"
+                :value="s.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="关键字" class="mb-0!">
@@ -713,28 +753,41 @@ onMounted(async () => {
     </div>
 
     <!-- 表格区域 -->
-    <PureTableBar title="入库明细报表" :columns="columns" storage-key="InboundDetail" @refresh="search">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="入库明细报表"
+      :columns="columns"
+      storage-key="InboundDetail"
+      @refresh="search"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
           :data="list"
           :columns="dynamicColumns"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="headerCellStyle"
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"
         >
           <template #empty>
-            <EmptyState title="暂无入库明细数据" description="请设置筛选条件后点击查询" />
+            <EmptyState
+              title="暂无入库明细数据"
+              description="请设置筛选条件后点击查询"
+            />
           </template>
           <template #inbound_date="{ row }">{{
             formatDate(row.inbound_date)
@@ -750,9 +803,10 @@ onMounted(async () => {
           <template #order_status="{ row }">
             <el-tag
               effect="plain"
-              :type="statusTypeMap[row.order_status] || 'info'"
+              :type="formatOrderStatus(row.order_status).type"
               size="small"
-            >{{ statusMap[row.order_status] || row.order_status }}</el-tag>
+              >{{ formatOrderStatus(row.order_status).label }}</el-tag
+            >
           </template>
           <template #create_time="{ row }">{{
             formatTime(row.create_time)
@@ -824,7 +878,12 @@ onMounted(async () => {
             v-model="drawerFilter.order_status"
             clearable
             class="w-full!"
-            ><el-option v-for="s in statusFilterOptions" :key="s.value" :label="s.label" :value="s.value" /></el-select>
+            ><el-option
+              v-for="s in statusFilterOptions"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+          /></el-select>
         </div>
       </div>
       <div class="drawer-section">
@@ -968,7 +1027,9 @@ onMounted(async () => {
       <template #footer>
         <div class="drawer-footer">
           <el-button @click="resetDrawer">重置</el-button>
-          <el-button type="primary" :loading="loading" @click="applyDrawer">查询</el-button>
+          <el-button type="primary" :loading="loading" @click="applyDrawer"
+            >查询</el-button
+          >
         </div>
       </template>
     </el-drawer>

@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { formatVehicleStatus, VEHICLE_STATUS_MAP } from "@/utils/format";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -29,30 +30,29 @@ const pagination = reactive({
   background: true
 });
 
-const statusMap = reactive<Record<number, { label: string; type: string }>>({});
-const statusOptions = ref<{ label: string; value: number }[]>([]);
-
-async function loadStatusDict() {
-  try {
-    const res = await api.get("/sys/dict/data/vehicle_status");
-    const list = res.data || [];
-    statusOptions.value = list.map((d: any) => ({
-      label: d.dict_label,
-      value: Number(d.dict_value)
-    }));
-    for (const d of list) {
-      statusMap[Number(d.dict_value)] = {
-        label: d.dict_label,
-        type: d.remark || "info"
-      };
-    }
-  } catch { /* 字典加载失败 */ }
-}
+const statusOptions = Object.entries(VEHICLE_STATUS_MAP).map(
+  ([value, label]) => ({ label, value: Number(value) })
+);
 
 const statsCards = computed(() => [
-  { label: "车辆总数", value: pagination.total, color: "var(--el-color-primary)", icon: CarLine },
-  { label: "启用", value: dataList.value.filter((item: any) => item.status === 1).length, color: "#67c23a", icon: CheckboxCircleLine },
-  { label: "本页", value: dataList.value.length, color: "var(--el-color-info)", icon: Van }
+  {
+    label: "车辆总数",
+    value: pagination.total,
+    color: "var(--el-color-primary)",
+    icon: CarLine
+  },
+  {
+    label: "启用",
+    value: dataList.value.filter((item: any) => item.status === 1).length,
+    color: "#67c23a",
+    icon: CheckboxCircleLine
+  },
+  {
+    label: "本页",
+    value: dataList.value.length,
+    color: "var(--el-color-info)",
+    icon: Van
+  }
 ]);
 
 const columns: any[] = [
@@ -104,7 +104,7 @@ const resetForm = () => {
   fetchData();
 };
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-Vehicle", String(v));
+  localStorage.setItem("page-size-Vehicle", String(v));
   pagination.pageSize = v;
   fetchData();
 };
@@ -231,7 +231,9 @@ async function handleImport() {
   }
 }
 
-onMounted(() => { loadStatusDict(); fetchData(); });
+onMounted(() => {
+  fetchData();
+});
 </script>
 
 <template>
@@ -244,21 +246,38 @@ onMounted(() => { loadStatusDict(); fetchData(); });
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 筛选条件卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -318,21 +337,31 @@ onMounted(() => { loadStatusDict(); fetchData(); });
     </div>
 
     <!-- 表格卡片 -->
-    <PureTableBar title="车辆管理" :columns="columns" storage-key="Vehicle" @refresh="onSearch">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="车辆管理"
+      :columns="columns"
+      storage-key="Vehicle"
+      @refresh="onSearch"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -344,15 +373,18 @@ onMounted(() => { loadStatusDict(); fetchData(); });
           @page-current-change="handleCurrentChange"
         >
           <template #empty>
-            <EmptyState title="暂无车辆数据" description="调整筛选条件或点击新增" />
+            <EmptyState
+              title="暂无车辆数据"
+              description="调整筛选条件或点击新增"
+            />
           </template>
           <template #status="{ row }">
             <el-tag
               effect="plain"
-              :type="statusMap[row.status]?.type || 'info'"
+              :type="formatVehicleStatus(row.status).type"
               size="small"
             >
-              {{ statusMap[row.status]?.label || row.status }}
+              {{ formatVehicleStatus(row.status).label }}
             </el-tag>
           </template>
           <template #operation="{ row }">
@@ -450,7 +482,11 @@ onMounted(() => { loadStatusDict(); fetchData(); });
       :close-on-click-modal="false"
     >
       <div class="flex items-center gap-3 mb-4">
-        <el-button plain :icon="useRenderIcon(Download)" @click="handleDownloadTemplate">
+        <el-button
+          plain
+          :icon="useRenderIcon(Download)"
+          @click="handleDownloadTemplate"
+        >
           下载导入模板
         </el-button>
       </div>
@@ -461,14 +497,26 @@ onMounted(() => { loadStatusDict(); fetchData(); });
         :limit="1"
         accept=".xlsx,.xls"
       >
-        <el-icon class="text-3xl" :style="{ color: 'var(--el-text-color-secondary)' }">
+        <el-icon
+          class="text-3xl"
+          :style="{ color: 'var(--el-text-color-secondary)' }"
+        >
           <component :is="useRenderIcon(Upload)" />
         </el-icon>
-        <div class="mt-2 text-sm" :style="{ color: 'var(--el-text-color-secondary)' }">
-          将 Excel 文件拖拽到此处，或<em :style="{ color: 'var(--el-color-primary)' }">点击上传</em>
+        <div
+          class="mt-2 text-sm"
+          :style="{ color: 'var(--el-text-color-secondary)' }"
+        >
+          将 Excel 文件拖拽到此处，或<em
+            :style="{ color: 'var(--el-color-primary)' }"
+            >点击上传</em
+          >
         </div>
         <template #tip>
-          <div class="mt-1 text-xs" :style="{ color: 'var(--el-text-color-placeholder)' }">
+          <div
+            class="mt-1 text-xs"
+            :style="{ color: 'var(--el-text-color-placeholder)' }"
+          >
             仅支持 .xlsx / .xls 格式
           </div>
         </template>
@@ -481,22 +529,32 @@ onMounted(() => { loadStatusDict(); fetchData(); });
           :closable="false"
           show-icon
         />
-        <div v-if="importResult.errors && importResult.errors.length > 0" class="mt-3">
-          <div class="text-sm font-medium mb-2" :style="{ color: 'var(--el-text-color-primary)' }">失败明细：</div>
+        <div
+          v-if="importResult.errors && importResult.errors.length > 0"
+          class="mt-3"
+        >
+          <div
+            class="text-sm font-medium mb-2"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            失败明细：
+          </div>
           <div
             v-for="(err, i) in importResult.errors"
             :key="i"
             class="text-xs mb-1"
             :style="{ color: 'var(--el-color-danger)' }"
           >
-            第 {{ err.row }} 行：{{ err.errors.join('；') }}
+            第 {{ err.row }} 行：{{ err.errors.join("；") }}
           </div>
         </div>
       </div>
 
       <template #footer>
         <el-button @click="importDialogVisible = false">关闭</el-button>
-        <el-button type="primary" :loading="importing" @click="handleImport">开始导入</el-button>
+        <el-button type="primary" :loading="importing" @click="handleImport"
+          >开始导入</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -518,6 +576,7 @@ onMounted(() => { loadStatusDict(); fetchData(); });
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

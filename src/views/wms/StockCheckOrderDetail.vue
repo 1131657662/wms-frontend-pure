@@ -3,24 +3,12 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
+import { formatCheckStatus } from "@/utils/format";
 
 defineOptions({ name: "StockCheckOrderDetail" });
 
 const route = useRoute();
 const router = useRouter();
-
-const statusMap = reactive<Record<string, string>>({});
-const statusType = reactive<Record<string, string>>({});
-
-async function loadStatusDict() {
-  try {
-    const res = await api.get("/sys/dict/data/stock_check_status");
-    for (const d of res.data || []) {
-      statusMap[d.dict_value] = d.dict_label;
-      statusType[d.dict_value] = d.remark || "info";
-    }
-  } catch { /* 字典加载失败 */ }
-}
 
 const order = ref<any>(null);
 const details = ref<any[]>([]);
@@ -64,11 +52,18 @@ const headerCellStyle = {
 
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 function getSummary({ columns }: any) {
@@ -135,7 +130,11 @@ async function handleVoid() {
   await ElMessageBox.confirm(
     `确定作废该盘点单？作废后不可再调整库存。`,
     "提示",
-    { type: "warning", confirmButtonText: "确定作废", confirmButtonClass: "el-button--danger" }
+    {
+      type: "warning",
+      confirmButtonText: "确定作废",
+      confirmButtonClass: "el-button--danger"
+    }
   );
   voiding.value = true;
   try {
@@ -167,7 +166,9 @@ async function handleAdjust() {
   }
 }
 
-onMounted(() => { loadData(); loadStatusDict(); });
+onMounted(() => {
+  loadData();
+});
 </script>
 
 <template>
@@ -190,8 +191,8 @@ onMounted(() => { loadData(); loadStatusDict(); });
           <el-tag
             v-if="order"
             effect="plain"
-            :type="statusType[order.status]"
-            >{{ statusMap[order.status] }}</el-tag
+            :type="formatCheckStatus(order.status).type"
+            >{{ formatCheckStatus(order.status).label }}</el-tag
           >
         </div>
         <div class="flex items-center gap-2">
@@ -235,10 +236,10 @@ onMounted(() => { loadData(); loadStatusDict(); });
         }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag
-            :type="statusType[order.status]"
+            :type="formatCheckStatus(order.status).type"
             effect="plain"
             size="small"
-            >{{ statusMap[order.status] }}</el-tag
+            >{{ formatCheckStatus(order.status).label }}</el-tag
           >
         </el-descriptions-item>
         <el-descriptions-item label="创建人">{{
@@ -254,11 +255,7 @@ onMounted(() => { loadData(); loadStatusDict(); });
     </div>
 
     <!-- 盘点明细卡片 -->
-    <div
-      v-loading="loading"
-      class="wms-card"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div v-loading="loading" class="wms-card" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -268,7 +265,8 @@ onMounted(() => { loadData(); loadStatusDict(); });
           :style="{ background: 'var(--el-color-primary)' }"
         />盘点明细
       </div>
-      <el-table border
+      <el-table
+        border
         :data="details"
         stripe
         show-summary
@@ -278,8 +276,18 @@ onMounted(() => { loadData(); loadStatusDict(); });
       >
         <el-table-column type="index" label="#" width="56" align="center" />
         <el-table-column prop="product_code" label="产品编码" width="130" />
-        <el-table-column prop="product_name" label="产品名称" width="150" show-overflow-tooltip />
-        <el-table-column prop="product_model" label="型号" width="150" show-overflow-tooltip />
+        <el-table-column
+          prop="product_name"
+          label="产品名称"
+          width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="product_model"
+          label="型号"
+          width="150"
+          show-overflow-tooltip
+        />
         <el-table-column
           prop="before_qty"
           label="盘点前件数"

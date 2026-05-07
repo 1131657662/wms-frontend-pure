@@ -10,16 +10,18 @@ export function formatTime(t: string | null | undefined): string {
   if (!t) return "—";
   // 纯日期字符串 (YYYY-MM-DD) 避免 UTC+8 偏移
   if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai",
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 /** 日期格式化（仅日期，无时分秒）— 适用于 inbound_date、outbound_date */
@@ -45,9 +47,7 @@ export function formatBoolean(
 }
 
 /** 启用状态 → 中文（formatBoolean 的语义别名） */
-export function formatEnabled(
-  v: number | boolean | null | undefined
-): string {
+export function formatEnabled(v: number | boolean | null | undefined): string {
   return formatBoolean(v, "启用", "禁用");
 }
 
@@ -63,11 +63,13 @@ export function formatDict(
 }
 
 /** 空值占位 */
-export function formatNull(
-  v: unknown,
-  placeholder = "—"
-): string {
-  if (v === null || v === undefined || v === "" || (typeof v === "number" && isNaN(v)))
+export function formatNull(v: unknown, placeholder = "—"): string {
+  if (
+    v === null ||
+    v === undefined ||
+    v === "" ||
+    (typeof v === "number" && isNaN(v))
+  )
     return placeholder;
   return String(v);
 }
@@ -76,4 +78,95 @@ export function formatNull(
 export function formatWeight(v: number | null | undefined): string {
   if (v === null || v === undefined) return "—";
   return Number(v).toFixed(4);
+}
+
+// ===================================================================
+// 状态常量映射 — 对照后端 config/constants.js STATUS_LABEL，字典 API 失败时的可靠回退
+// ===================================================================
+
+/** 订单状态 → 中文（入库单/出库单通用） */
+export const ORDER_STATUS_MAP: Record<string, string> = {
+  draft: "草稿",
+  submit: "已提交",
+  audited: "已审核",
+  cancelled: "已取消",
+  completed: "已完成"
+};
+
+/** 订单状态 → el-tag type */
+export const ORDER_STATUS_TYPE: Record<string, string> = {
+  draft: "info",
+  submit: "warning",
+  audited: "success",
+  cancelled: "danger",
+  completed: "success"
+};
+
+/** 盘点状态 → 中文 */
+export const CHECK_STATUS_MAP: Record<string, string> = {
+  draft: "草稿",
+  confirmed: "已确认",
+  adjusted: "已调整",
+  voided: "已作废"
+};
+
+/** 盘点状态 → el-tag type */
+export const CHECK_STATUS_TYPE: Record<string, string> = {
+  draft: "info",
+  confirmed: "success",
+  adjusted: "warning",
+  voided: "danger"
+};
+
+/** 车辆状态 → 中文 */
+export const VEHICLE_STATUS_MAP: Record<number, string> = {
+  0: "维修",
+  1: "可用",
+  2: "停用"
+};
+
+/** 车辆状态 → el-tag type */
+export const VEHICLE_STATUS_TYPE: Record<number, string> = {
+  0: "danger",
+  1: "success",
+  2: "info"
+};
+
+// ===================================================================
+// 状态格式化函数 — 统一返回 { label, type }，供 <el-tag> 直接使用
+// ===================================================================
+
+export interface StatusResult {
+  label: string;
+  type: "success" | "warning" | "danger" | "info" | "";
+}
+
+function toStatusResult(
+  value: string | number | null | undefined,
+  labelMap: Record<string | number, string>,
+  typeMap: Record<string | number, string>
+): StatusResult {
+  if (value === null || value === undefined) {
+    return { label: "—", type: "info" };
+  }
+  const label = labelMap[value];
+  const type = (typeMap[value] || "info") as StatusResult["type"];
+  return { label: label || String(value), type };
+}
+
+/** 订单状态格式化 */
+export function formatOrderStatus(v: string | null | undefined): StatusResult {
+  return toStatusResult(v, ORDER_STATUS_MAP, ORDER_STATUS_TYPE);
+}
+
+/** 盘点状态格式化 */
+export function formatCheckStatus(v: string | null | undefined): StatusResult {
+  return toStatusResult(v, CHECK_STATUS_MAP, CHECK_STATUS_TYPE);
+}
+
+/** 车辆状态格式化 */
+export function formatVehicleStatus(
+  v: number | null | undefined
+): StatusResult {
+  return toStatusResult(v, VEHICLE_STATUS_MAP, VEHICLE_STATUS_TYPE);
 }

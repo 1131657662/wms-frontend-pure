@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, onMounted } from "vue";
 import api from "@/api/wms";
+import { formatOrderStatus } from "@/utils/format";
 
 defineOptions({ name: "DocTable" });
 
@@ -11,24 +12,17 @@ defineProps<{
 
 const docTypeText = reactive<Record<string, string>>({});
 const docTypeTag = reactive<Record<string, string>>({});
-const statusType = reactive<Record<string, string>>({});
-const statusText = reactive<Record<string, string>>({});
 
 async function loadDicts() {
   try {
-    const [docRes, statusRes] = await Promise.all([
-      api.get("/sys/dict/data/doc_type"),
-      api.get("/sys/dict/data/order_status")
-    ]);
+    const docRes = await api.get("/sys/dict/data/doc_type");
     for (const d of docRes.data || []) {
       docTypeText[d.dict_value] = d.dict_label;
       docTypeTag[d.dict_value] = d.remark || "info";
     }
-    for (const d of statusRes.data || []) {
-      statusText[d.dict_value] = d.dict_label;
-      statusType[d.dict_value] = d.remark || "info";
-    }
-  } catch { /* 字典加载失败 */ }
+  } catch {
+    /* 字典加载失败 */
+  }
 }
 
 onMounted(loadDicts);
@@ -52,23 +46,46 @@ function formatTime(t: string) {
         size="small"
         :header-cell-class-name="() => 'doc-th'"
         max-height="400"
-        style="width:100%"
+        style="width: 100%"
       >
-        <el-table-column label="单据号" prop="order_no" width="180" show-overflow-tooltip />
+        <el-table-column
+          label="单据号"
+          prop="order_no"
+          width="180"
+          show-overflow-tooltip
+        />
         <el-table-column label="类型" width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="(docTypeTag[row.doc_type] || 'info') as 'primary' | 'success' | 'warning' | 'danger' | 'info'" size="small" effect="plain">
+            <el-tag
+              :type="docTypeTag[row.doc_type] || 'info'"
+              size="small"
+              effect="plain"
+            >
               {{ docTypeText[row.doc_type] || row.doc_type }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="仓库" prop="warehouse_name" min-width="130" show-overflow-tooltip />
-        <el-table-column label="关联方" prop="related_name" min-width="130" show-overflow-tooltip />
+        <el-table-column
+          label="仓库"
+          prop="warehouse_name"
+          min-width="130"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="关联方"
+          prop="related_name"
+          min-width="130"
+          show-overflow-tooltip
+        />
         <el-table-column label="日期" prop="date" width="110" />
         <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="(statusType[row.status] || 'info') as 'primary' | 'success' | 'warning' | 'danger' | 'info'" size="small" effect="plain">
-              {{ statusText[row.status] || row.status }}
+            <el-tag
+              :type="formatOrderStatus(row.status).type"
+              size="small"
+              effect="plain"
+            >
+              {{ formatOrderStatus(row.status).label }}
             </el-tag>
           </template>
         </el-table-column>
@@ -84,19 +101,18 @@ function formatTime(t: string) {
 </template>
 
 <style scoped>
-
 .doc-table {
+  overflow: hidden;
   background: var(--dash-card-bg, var(--el-bg-color, #fff));
   border: var(--dash-border);
   border-radius: var(--dash-radius);
   box-shadow: var(--dash-shadow);
-  overflow: hidden;
 }
 
 .doc-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 16px var(--dash-card-pad);
   border-bottom: var(--dash-border);
 }
@@ -108,10 +124,10 @@ function formatTime(t: string) {
 }
 
 .doc-table-wrap :deep(.doc-th) {
-  background: transparent !important;
-  color: var(--el-text-color-secondary);
-  font-weight: 500;
   font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
+  background: transparent !important;
 }
 
 .doc-time {

@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
+import { formatOrderStatus } from "@/utils/format";
 import PrintDropdown from "@/components/PrintDropdown";
 import * as XLSX from "xlsx";
 
@@ -11,21 +12,7 @@ defineOptions({ name: "OutboundOrderDetail" });
 const route = useRoute();
 const router = useRouter();
 
-const statusMap = reactive<Record<string, string>>({});
-const statusType = reactive<Record<string, string>>({});
 const billTypeMap = reactive<Record<string, string>>({});
-
-async function loadStatusDict() {
-  try {
-    const res = await api.get("/sys/dict/data/order_status");
-    for (const d of res.data || []) {
-      statusMap[d.dict_value] = d.dict_label;
-      statusType[d.dict_value] = d.remark || "info";
-    }
-  } catch {
-    /* 字典加载失败 */
-  }
-}
 
 async function loadBillTypeDict() {
   try {
@@ -217,7 +204,6 @@ async function handleRevert() {
 
 onMounted(() => {
   loadData();
-  loadStatusDict();
   loadBillTypeDict();
 });
 </script>
@@ -242,8 +228,8 @@ onMounted(() => {
           <el-tag
             v-if="order"
             effect="plain"
-            :type="statusType[order.order_status]"
-            >{{ statusMap[order.order_status] }}</el-tag
+            :type="formatOrderStatus(order.order_status).type"
+            >{{ formatOrderStatus(order.order_status).label }}</el-tag
           >
         </div>
         <div class="flex items-center gap-2">

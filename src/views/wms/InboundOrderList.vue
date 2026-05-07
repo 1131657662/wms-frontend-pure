@@ -2,7 +2,11 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { formatDate } from "@/utils/format";
+import {
+  formatDate,
+  formatOrderStatus,
+  ORDER_STATUS_MAP
+} from "@/utils/format";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
@@ -36,23 +40,8 @@ const selectedRows = ref<any[]>([]);
 const exporting = ref(false);
 const batchActing = ref(false);
 
-const statusMap = reactive<Record<string, string>>({});
-const statusType = reactive<Record<string, string>>({});
-
-async function loadStatusDict() {
-  try {
-    const res = await api.get("/sys/dict/data/order_status");
-    for (const d of res.data || []) {
-      statusMap[d.dict_value] = d.dict_label;
-      statusType[d.dict_value] = d.remark || "info";
-    }
-  } catch {
-    /* 字典加载失败 */
-  }
-}
-
 const statusFilterOptions = computed(() =>
-  Object.entries(statusMap).map(([value, label]) => ({ label, value }))
+  Object.entries(ORDER_STATUS_MAP).map(([value, label]) => ({ label, value }))
 );
 
 const billTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -334,20 +323,19 @@ async function confirmBatchOp(
   const cannot = rows.filter((r: any) => r.order_status !== requiredStatus);
   if (can.length === 0) {
     ElMessage.warning(
-      `选中的单据没有「${statusMap[requiredStatus]}」状态的，无法${actionName}`
+      `选中的单据没有「${formatOrderStatus(requiredStatus).label}」状态的，无法${actionName}`
     );
     return null;
   }
   if (cannot.length > 0) {
     const cannotList = cannot
       .map(
-        (r: any) =>
-          `${r.order_no}(${statusMap[r.order_status] || r.order_status})`
+        (r: any) => `${r.order_no}(${formatOrderStatus(r.order_status).label})`
       )
       .join("、");
     try {
       await ElMessageBox.confirm(
-        `以下 ${cannot.length} 条不满足${actionName}条件（需「${statusMap[requiredStatus]}」）：\n${cannotList}\n\n可${actionName}的有 ${can.length} 条，是否仅${actionName}这些？`,
+        `以下 ${cannot.length} 条不满足${actionName}条件（需「${formatOrderStatus(requiredStatus).label}」）：\n${cannotList}\n\n可${actionName}的有 ${can.length} 条，是否仅${actionName}这些？`,
         "提示",
         {
           type: "warning",
@@ -456,7 +444,7 @@ const exportFields = [
   {
     header: "状态",
     key: "order_status",
-    map: (v: string) => statusMap[v] || v
+    map: (v: string) => formatOrderStatus(v).label
   },
   { header: "件数合计", key: "totalQty" },
   { header: "吨位合计", key: "totalWeight" },
@@ -577,7 +565,6 @@ async function loadDict() {
 
 onMounted(() => {
   loadDict();
-  loadStatusDict();
   fetchData();
   loadWarehouses();
   loadSuppliers();
@@ -708,12 +695,12 @@ onMounted(() => {
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          :header-cell-style="headerCellStyle"
+          :row-class-name="getRowClassName"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :header-cell-style="headerCellStyle"
-          :row-class-name="getRowClassName"
           @row-click="handleRowClick"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
@@ -727,10 +714,10 @@ onMounted(() => {
           </template>
           <template #order_status="{ row }">
             <el-tag
-              :type="statusType[row.order_status] || 'info'"
+              :type="formatOrderStatus(row.order_status).type"
               effect="plain"
               size="small"
-              >{{ statusMap[row.order_status] || row.order_status }}</el-tag
+              >{{ formatOrderStatus(row.order_status).label }}</el-tag
             >
           </template>
           <template #totalWeight="{ row }">{{
