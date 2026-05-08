@@ -178,15 +178,41 @@ async function openPermission(row: any) {
   currentRoleId = row.id;
   try {
     const res = await api.get(`/sys/role/${row.id}/permissions`);
+    console.log(
+      "[openPermission] API 返回的完整 data:",
+      JSON.stringify(res.data)
+    );
+    console.log("[openPermission] checkedPermIds:", res.data?.checkedPermIds);
+    console.log(
+      "[openPermission] checkedPermIds 类型:",
+      res.data?.checkedPermIds?.map((v: any) => typeof v)
+    );
+    console.log(
+      "[openPermission] permissionTree 节点 id 类型:",
+      res.data?.permissionTree?.[0]
+        ? typeof res.data.permissionTree[0].id
+        : "tree为空"
+    );
     permTreeData.value = res.data.permissionTree || [];
     checkedPermIds.value = res.data.checkedPermIds || [];
   } catch {
     /* empty */
   }
+  console.log(
+    "[openPermission] 赋值后 checkedPermIds.value:",
+    checkedPermIds.value
+  );
   permDialogKey.value++;
   permVisible.value = true;
-  // el-tree 的 default-checked-keys 只初始化时生效，dialog 重建后需主动调用 setCheckedKeys
   await nextTick();
+  console.log(
+    "[openPermission] setCheckedKeys 调用前 checkedPermIds.value:",
+    checkedPermIds.value
+  );
+  console.log(
+    "[openPermission] setCheckedKeys 前 treeRef:",
+    !!permTreeRef.value
+  );
   permTreeRef.value?.setCheckedKeys(checkedPermIds.value, false);
 }
 
@@ -227,6 +253,13 @@ async function handleSavePerm() {
     const checked = permTreeRef.value?.getCheckedKeys() || [];
     const halfChecked = permTreeRef.value?.getHalfCheckedKeys?.() || [];
     const permIds = [...checked, ...halfChecked];
+    console.log("[handleSavePerm] 提交的 permIds:", permIds);
+    console.log(
+      "[handleSavePerm] checked:",
+      checked,
+      "halfChecked:",
+      halfChecked
+    );
     await api.put(`/sys/role/${currentRoleId}/permissions`, {
       perm_ids: permIds
     });
