@@ -90,9 +90,13 @@ function filterNoPermissionTree(data: RouteComponent[]) {
     if (v.meta?.roles && Array.isArray(v.meta.roles)) {
       if (!isOneOfArray(v.meta.roles, currentRoles)) return false;
     }
-    // 权限检查：有 meta.perm 时，用户必须拥有该权限（管理员除外）
+    // 权限检查：有 meta.perm 时，用户拥有该前缀下任意权限即显示菜单（管理员除外）
     if (v.meta?.perm && !isAdmin) {
-      if (!currentPerms.includes(v.meta.perm)) return false;
+      const prefix = v.meta.perm + ":";
+      const hasPerm = currentPerms.some(
+        p => p === v.meta.perm || p.startsWith(prefix)
+      );
+      if (!hasPerm) return false;
     }
     return true;
   });
