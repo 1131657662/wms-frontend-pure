@@ -176,7 +176,6 @@ let currentRoleId: number | null = null;
 
 async function openPermission(row: any) {
   currentRoleId = row.id;
-  permDialogKey.value++;
   try {
     const res = await api.get(`/sys/role/${row.id}/permissions`);
     permTreeData.value = res.data.permissionTree || [];
@@ -184,7 +183,11 @@ async function openPermission(row: any) {
   } catch {
     /* empty */
   }
+  permDialogKey.value++;
   permVisible.value = true;
+  // el-tree 的 default-checked-keys 只初始化时生效，dialog 重建后需主动调用 setCheckedKeys
+  await nextTick();
+  permTreeRef.value?.setCheckedKeys(checkedPermIds.value, false);
 }
 
 const permSearchText = ref("");
@@ -368,11 +371,11 @@ onMounted(fetchData);
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          :header-cell-style="headerCellStyle"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :header-cell-style="headerCellStyle"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >
