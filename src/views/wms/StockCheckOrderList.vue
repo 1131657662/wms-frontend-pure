@@ -14,6 +14,7 @@ import Checked from "~icons/ep/checked";
 import Document from "~icons/ri/file-text-line";
 import PrintDropdown from "@/components/PrintDropdown";
 import { formatCheckStatus, CHECK_STATUS_MAP } from "@/utils/format";
+import { hasPerms } from "@/utils/auth";
 
 defineOptions({ name: "StockCheckOrderList" });
 const router = useRouter();
@@ -325,6 +326,7 @@ onMounted(() => {
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <el-button
+            v-if="hasPerms('stock-check:create')"
             type="primary"
             :icon="useRenderIcon(AddFill)"
             @click="router.push('/stock-check/form')"
@@ -438,7 +440,7 @@ onMounted(() => {
                 >查看</el-button
               >
               <el-button
-                v-if="row.status === 'draft'"
+                v-if="hasPerms('stock-check:edit') && row.status === 'draft'"
                 link
                 type="primary"
                 size="small"
@@ -446,7 +448,7 @@ onMounted(() => {
                 >编辑</el-button
               >
               <el-button
-                v-if="row.status === 'draft'"
+                v-if="hasPerms('stock-check:edit') && row.status === 'draft'"
                 type="danger"
                 size="small"
                 :loading="deleting === row.id"
@@ -454,7 +456,7 @@ onMounted(() => {
                 >删除</el-button
               >
               <el-button
-                v-if="row.status === 'draft'"
+                v-if="hasPerms('stock-check:audit') && row.status === 'draft'"
                 link
                 type="warning"
                 size="small"
@@ -462,7 +464,9 @@ onMounted(() => {
                 >确认</el-button
               >
               <el-button
-                v-if="row.status === 'confirmed'"
+                v-if="
+                  hasPerms('stock-check:audit') && row.status === 'confirmed'
+                "
                 link
                 type="danger"
                 size="small"
@@ -470,7 +474,9 @@ onMounted(() => {
                 >作废</el-button
               >
               <el-button
-                v-if="row.status === 'confirmed'"
+                v-if="
+                  hasPerms('stock-check:audit') && row.status === 'confirmed'
+                "
                 link
                 type="success"
                 size="small"

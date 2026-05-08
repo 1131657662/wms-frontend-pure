@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
 import { formatCheckStatus } from "@/utils/format";
+import { hasPerms } from "@/utils/auth";
 
 defineOptions({ name: "StockCheckOrderDetail" });
 
@@ -198,28 +199,40 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <el-button @click="router.push('/stock-check/list')">返回</el-button>
           <el-button
-            v-if="order && order.status === 'draft'"
+            v-if="
+              hasPerms('stock-check:edit') && order && order.status === 'draft'
+            "
             type="danger"
             :loading="deleting"
             @click="handleDelete"
             >删除</el-button
           >
           <el-button
-            v-if="order && order.status === 'draft'"
+            v-if="
+              hasPerms('stock-check:audit') && order && order.status === 'draft'
+            "
             type="warning"
             :loading="confirming"
             @click="handleConfirm"
             >确认</el-button
           >
           <el-button
-            v-if="order && order.status === 'confirmed'"
+            v-if="
+              hasPerms('stock-check:audit') &&
+              order &&
+              order.status === 'confirmed'
+            "
             type="danger"
             :loading="voiding"
             @click="handleVoid"
             >作废</el-button
           >
           <el-button
-            v-if="order && order.status === 'confirmed'"
+            v-if="
+              hasPerms('stock-check:audit') &&
+              order &&
+              order.status === 'confirmed'
+            "
             type="success"
             :loading="adjusting"
             @click="handleAdjust"

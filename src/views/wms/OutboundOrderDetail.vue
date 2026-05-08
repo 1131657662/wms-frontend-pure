@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
 import { formatOrderStatus } from "@/utils/format";
+import { hasPerms } from "@/utils/auth";
 import PrintDropdown from "@/components/PrintDropdown";
 import * as XLSX from "xlsx";
 
@@ -244,6 +245,7 @@ onMounted(() => {
           >
           <el-button
             v-if="
+              hasPerms('outbound:edit') &&
               order &&
               (order.order_status === 'draft' ||
                 order.order_status === 'submit')
@@ -254,14 +256,22 @@ onMounted(() => {
             >删除</el-button
           >
           <el-button
-            v-if="order && order.order_status === 'submit'"
+            v-if="
+              hasPerms('outbound:audit') &&
+              order &&
+              order.order_status === 'submit'
+            "
             type="success"
             :loading="auditing"
             @click="handleAudit"
             >审核通过</el-button
           >
           <el-button
-            v-if="order && order.order_status === 'audited'"
+            v-if="
+              hasPerms('outbound:audit') &&
+              order &&
+              order.order_status === 'audited'
+            "
             type="warning"
             :loading="reverting"
             @click="handleRevert"

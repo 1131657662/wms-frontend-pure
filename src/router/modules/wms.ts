@@ -36,7 +36,8 @@ export default [
     meta: {
       icon: "ep/trend-charts",
       title: "统计报表",
-      rank: 2
+      rank: 2,
+      perm: "report"
     },
     children: [
       {
@@ -92,7 +93,8 @@ export default [
     meta: {
       icon: "ri/database-2-line",
       title: "基础资料",
-      rank: 3
+      rank: 3,
+      perm: "basic"
     },
     children: [
       {
@@ -143,6 +145,7 @@ export default [
       icon: "ri/arrow-down-circle-line",
       title: "入库管理",
       rank: 4,
+      perm: "inbound",
       useParentTitle: true
     },
     children: [
@@ -194,6 +197,7 @@ export default [
       icon: "ri/arrow-up-circle-line",
       title: "出库管理",
       rank: 5,
+      perm: "outbound",
       useParentTitle: true
     },
     children: [
@@ -245,6 +249,7 @@ export default [
       icon: "ep/checked",
       title: "盘点管理",
       rank: 6,
+      perm: "stock-check",
       useParentTitle: true
     },
     children: [
@@ -296,6 +301,7 @@ export default [
       icon: "ep/box",
       title: "库存管理",
       rank: 7,
+      perm: "stock",
       useParentTitle: true
     },
     children: [
@@ -348,7 +354,8 @@ export default [
     meta: {
       icon: "ri/settings-3-line",
       title: "系统配置",
-      rank: 9
+      rank: 9,
+      perm: "settings"
     },
     children: [
       {
@@ -392,7 +399,8 @@ export default [
     meta: {
       icon: "ep/monitor",
       title: "系统监控",
-      rank: 10
+      rank: 10,
+      perm: "monitor"
     },
     children: [
       {

@@ -95,7 +95,7 @@ export const getLogin = async (data?: object) => {
           username: ui.username || "",
           nickname: ui.nickname || ui.username || "",
           roles: ui.roleCode ? [ui.roleCode] : [],
-          permissions: ui.permissions || ["*:*:*"]
+          permissions: ui.permissions ?? []
         }
       };
     }

@@ -7,6 +7,7 @@ import {
   formatOrderStatus,
   ORDER_STATUS_MAP
 } from "@/utils/format";
+import { hasPerms } from "@/utils/auth";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
@@ -624,12 +625,14 @@ onMounted(() => {
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         <el-button
+          v-if="hasPerms('inbound:create')"
           type="primary"
           :icon="useRenderIcon(AddFill)"
           @click="router.push('/inbound/form')"
           >新增入库单</el-button
         >
         <el-button
+          v-if="hasPerms('inbound:audit')"
           type="success"
           plain
           :disabled="selectedRows.length === 0"
@@ -638,6 +641,7 @@ onMounted(() => {
           >批量审核 {{ selectedRows.length }}</el-button
         >
         <el-button
+          v-if="hasPerms('inbound:edit')"
           type="warning"
           plain
           :disabled="selectedRows.length === 0"
@@ -747,7 +751,9 @@ onMounted(() => {
               >
               <el-button
                 v-if="
-                  row.order_status === 'draft' || row.order_status === 'submit'
+                  hasPerms('inbound:edit') &&
+                  (row.order_status === 'draft' ||
+                    row.order_status === 'submit')
                 "
                 link
                 type="primary"

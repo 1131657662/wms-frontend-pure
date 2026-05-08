@@ -78,13 +78,24 @@ function isOneOfArray(a: Array<string>, b: Array<string>) {
     : true;
 }
 
-/** 从localStorage里取出当前登录用户的角色roles，过滤无权限的菜单 */
+/** 从localStorage里取出当前登录用户的角色roles和权限permissions，过滤无权限的菜单 */
 function filterNoPermissionTree(data: RouteComponent[]) {
-  const currentRoles =
-    storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [];
-  const newTree = cloneDeep(data).filter((v: any) =>
-    isOneOfArray(v.meta?.roles, currentRoles)
-  );
+  const userInfo = storageLocal().getItem<DataInfo<number>>(userKey);
+  const currentRoles = userInfo?.roles ?? [];
+  const currentPerms = userInfo?.permissions ?? [];
+  const isAdmin = currentRoles.includes("ADMIN");
+
+  const newTree = cloneDeep(data).filter((v: any) => {
+    // 角色检查：有 meta.roles 时，用户角色必须在列表中
+    if (v.meta?.roles && Array.isArray(v.meta.roles)) {
+      if (!isOneOfArray(v.meta.roles, currentRoles)) return false;
+    }
+    // 权限检查：有 meta.perm 时，用户必须拥有该权限（管理员除外）
+    if (v.meta?.perm && !isAdmin) {
+      if (!currentPerms.includes(v.meta.perm)) return false;
+    }
+    return true;
+  });
   newTree.forEach(
     (v: any) => v.children && (v.children = filterNoPermissionTree(v.children))
   );
