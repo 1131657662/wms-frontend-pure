@@ -17,7 +17,10 @@ const searchForm = reactive({ keyword: "" });
 const dataList = ref([]);
 const loading = ref(false);
 const pagination = reactive({
-  total: 0, pageSize: Number(localStorage.getItem("page-size-RoleList")) || 20, currentPage: 1, background: true,
+  total: 0,
+  pageSize: Number(localStorage.getItem("page-size-RoleList")) || 20,
+  currentPage: 1,
+  background: true,
   pageSizes: [10, 20, 50, 100, 500, 1000]
 });
 
@@ -36,35 +39,81 @@ const stats = computed(() => ({
 
 // ==================== 列定义 ====================
 const columns: any[] = [
-  { type: "index", label: "#", width: 56, index: (i: number) => (pagination.currentPage - 1) * pagination.pageSize + i + 1 },
-  { label: "角色编码", prop: "role_code", width: 150, showOverflowTooltip: true },
-  { label: "角色名称", prop: "role_name", width: 150, showOverflowTooltip: true },
+  {
+    type: "index",
+    label: "#",
+    width: 56,
+    index: (i: number) =>
+      (pagination.currentPage - 1) * pagination.pageSize + i + 1
+  },
+  {
+    label: "角色编码",
+    prop: "role_code",
+    width: 150,
+    showOverflowTooltip: true
+  },
+  {
+    label: "角色名称",
+    prop: "role_name",
+    width: 150,
+    showOverflowTooltip: true
+  },
   { label: "备注", prop: "remark", minWidth: 200, showOverflowTooltip: true },
-  { label: "操作", slot: "operation", width: 240, fixed: "right", align: "center" }
+  {
+    label: "操作",
+    slot: "operation",
+    width: 240,
+    fixed: "right",
+    align: "center"
+  }
 ];
 
 async function fetchData() {
   loading.value = true;
   try {
     const res = await api.get("/sys/role/list", {
-      params: { page: pagination.currentPage, pageSize: pagination.pageSize, keyword: searchForm.keyword || undefined }
+      params: {
+        page: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        keyword: searchForm.keyword || undefined
+      }
     });
     dataList.value = res.data.list;
     pagination.total = res.data.total;
-  } finally { loading.value = false; }
+  } finally {
+    loading.value = false;
+  }
 }
 
-const onSearch = () => { pagination.currentPage = 1; fetchData(); };
-const resetForm = () => { searchForm.keyword = ""; pagination.currentPage = 1; fetchData(); };
+const onSearch = () => {
+  pagination.currentPage = 1;
+  fetchData();
+};
+const resetForm = () => {
+  searchForm.keyword = "";
+  pagination.currentPage = 1;
+  fetchData();
+};
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-RoleList", String(v)); pagination.pageSize = v; fetchData(); };
-const handleCurrentChange = (v: number) => { pagination.currentPage = v; fetchData(); };
+  localStorage.setItem("page-size-RoleList", String(v));
+  pagination.pageSize = v;
+  fetchData();
+};
+const handleCurrentChange = (v: number) => {
+  pagination.currentPage = v;
+  fetchData();
+};
 
 // ==================== 弹窗 ====================
 const dialogVisible = ref(false);
 const dialogTitle = ref("新增角色");
 const saving = ref(false);
-const form = reactive({ id: null as number | null, role_code: "", role_name: "", remark: "" });
+const form = reactive({
+  id: null as number | null,
+  role_code: "",
+  role_name: "",
+  remark: ""
+});
 const formRef = ref();
 const formRules = {
   role_code: [{ required: true, message: "请输入角色编码", trigger: "blur" }],
@@ -74,7 +123,12 @@ const formRules = {
 function openDialog(row?: any) {
   if (row?.id) {
     dialogTitle.value = "编辑角色";
-    Object.assign(form, { id: row.id, role_code: row.role_code, role_name: row.role_name, remark: row.remark || "" });
+    Object.assign(form, {
+      id: row.id,
+      role_code: row.role_code,
+      role_name: row.role_name,
+      remark: row.remark || ""
+    });
   } else {
     dialogTitle.value = "新增角色";
     Object.assign(form, { id: null, role_code: "", role_name: "", remark: "" });
@@ -87,17 +141,25 @@ async function handleSave() {
   if (!valid) return;
   saving.value = true;
   try {
-    if (form.id) { await api.put(`/sys/role/${form.id}`, { ...form }); }
-    else { await api.post("/sys/role", { ...form }); }
+    if (form.id) {
+      await api.put(`/sys/role/${form.id}`, { ...form });
+    } else {
+      await api.post("/sys/role", { ...form });
+    }
     ElMessage.success(form.id ? "更新成功" : "创建成功");
     dialogVisible.value = false;
     fetchData();
-  } catch (e: any) { ElMessage.error(e.response?.data?.message || "操作失败"); }
-  finally { saving.value = false; }
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "操作失败");
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function handleDelete(row: any) {
-  await ElMessageBox.confirm(`确定删除角色「${row.role_name}」？`, "提示", { type: "warning" });
+  await ElMessageBox.confirm(`确定删除角色「${row.role_name}」？`, "提示", {
+    type: "warning"
+  });
   await api.delete(`/sys/role/${row.id}`);
   ElMessage.success("删除成功");
   fetchData();
@@ -109,15 +171,19 @@ const permSaving = ref(false);
 const permTreeData = ref<any[]>([]);
 const checkedPermIds = ref<number[]>([]);
 const permTreeRef = ref();
+const permDialogKey = ref(0);
 let currentRoleId: number | null = null;
 
 async function openPermission(row: any) {
   currentRoleId = row.id;
+  permDialogKey.value++;
   try {
     const res = await api.get(`/sys/role/${row.id}/permissions`);
     permTreeData.value = res.data.permissionTree || [];
     checkedPermIds.value = res.data.checkedPermIds || [];
-  } catch { /* empty */ }
+  } catch {
+    /* empty */
+  }
   permVisible.value = true;
 }
 
@@ -138,7 +204,7 @@ function countPermNodes(nodes: any[]): number {
   return count;
 }
 
-watch(permSearchText, (val) => {
+watch(permSearchText, val => {
   permTreeRef.value?.filter(val);
 });
 
@@ -157,11 +223,19 @@ async function handleSavePerm() {
   try {
     const checked = permTreeRef.value?.getCheckedKeys() || [];
     const halfChecked = permTreeRef.value?.getHalfCheckedKeys?.() || [];
-    await api.put(`/sys/role/${currentRoleId}/permissions`, { perm_ids: [...checked, ...halfChecked] });
+    const permIds = [...checked, ...halfChecked];
+    await api.put(`/sys/role/${currentRoleId}/permissions`, {
+      perm_ids: permIds
+    });
+    // 同步本地状态，防止下次打开弹窗闪烁旧数据
+    checkedPermIds.value = permIds;
     ElMessage.success("权限分配成功");
     permVisible.value = false;
-  } catch (e: any) { ElMessage.error(e.response?.data?.message || "操作失败"); }
-  finally { permSaving.value = false; }
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "操作失败");
+  } finally {
+    permSaving.value = false;
+  }
 }
 
 onMounted(fetchData);
@@ -173,28 +247,56 @@ onMounted(fetchData);
     <div class="flex gap-4 mb-4">
       <div
         v-for="card in [
-          { label: '角色总数', value: stats.total, color: 'var(--el-color-primary)', icon: Shield },
+          {
+            label: '角色总数',
+            value: stats.total,
+            color: 'var(--el-color-primary)',
+            icon: Shield
+          },
           { label: '已加载', value: stats.loaded, color: '#67c23a', icon: Key },
-          { label: '页面', value: `第 ${pagination.currentPage} 页`, color: 'var(--el-color-info)', icon: Time }
+          {
+            label: '页面',
+            value: `第 ${pagination.currentPage} 页`,
+            color: 'var(--el-color-info)',
+            icon: Time
+          }
         ]"
         :key="card.label"
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ==================== 操作卡片 ==================== -->
-    <div
-      class="wms-card mb-4"
-    >
+    <div class="wms-card mb-4">
       <div :style="{ padding: '16px 20px' }">
         <div class="flex items-center gap-3 flex-wrap">
           <el-input
@@ -207,68 +309,141 @@ onMounted(fetchData);
             @keyup.enter="onSearch"
           />
           <el-divider direction="vertical" />
-          <el-button type="primary" :icon="useRenderIcon(Search)" :loading="loading" @click="onSearch">查询</el-button>
+          <el-button
+            type="primary"
+            :icon="useRenderIcon(Search)"
+            :loading="loading"
+            @click="onSearch"
+            >查询</el-button
+          >
           <el-button @click="resetForm">重置</el-button>
           <div class="flex-1" />
-          <el-button type="primary" :icon="useRenderIcon(AddFill)" @click="openDialog()">新增角色</el-button>
+          <el-button
+            type="primary"
+            :icon="useRenderIcon(AddFill)"
+            @click="openDialog()"
+            >新增角色</el-button
+          >
         </div>
       </div>
-      <div class="flex items-center" :style="{ padding: '10px 20px', borderTop: '1px solid var(--el-border-color-lighter)' }">
-        <span class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">
-          共 <strong :style="{ color: 'var(--el-text-color-primary)' }">{{ pagination.total }}</strong> 个角色
+      <div
+        class="flex items-center"
+        :style="{
+          padding: '10px 20px',
+          borderTop: '1px solid var(--el-border-color-lighter)'
+        }"
+      >
+        <span
+          class="text-xs"
+          :style="{ color: 'var(--el-text-color-secondary)' }"
+        >
+          共
+          <strong :style="{ color: 'var(--el-text-color-primary)' }">{{
+            pagination.total
+          }}</strong>
+          个角色
         </span>
       </div>
     </div>
 
     <!-- ==================== 表格 ==================== -->
-    <PureTableBar title="角色管理" :columns="columns" storage-key="RoleList" @refresh="onSearch">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="角色管理"
+      :columns="columns"
+      storage-key="RoleList"
+      @refresh="onSearch"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :header-cell-style="headerCellStyle"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >
           <template #empty>
-            <EmptyState title="暂无角色数据" description="点击「新增角色」创建" />
+            <EmptyState
+              title="暂无角色数据"
+              description="点击「新增角色」创建"
+            />
           </template>
           <template #operation="{ row }">
-            <el-button link type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-            <el-button link type="primary" size="small" @click="openPermission(row)">分配权限</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" size="small" @click="openDialog(row)"
+              >编辑</el-button
+            >
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="openPermission(row)"
+              >分配权限</el-button
+            >
+            <el-button
+              link
+              type="danger"
+              size="small"
+              @click="handleDelete(row)"
+              >删除</el-button
+            >
           </template>
         </pure-table>
       </template>
     </PureTableBar>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="500px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        label-width="100px"
+      >
         <el-form-item label="角色编码" prop="role_code">
           <el-input v-model="form.role_code" :disabled="!!form.id" />
         </el-form-item>
         <el-form-item label="角色名称" prop="role_name">
           <el-input v-model="form.role_name" />
         </el-form-item>
-        <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" :rows="2" /></el-form-item>
+        <el-form-item label="备注"
+          ><el-input v-model="form.remark" type="textarea" :rows="2"
+        /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave"
+          >保存</el-button
+        >
       </template>
     </el-dialog>
 
-    <el-dialog v-model="permVisible" title="分配权限" width="700px" destroy-on-close :close-on-click-modal="false">
+    <el-dialog
+      :key="'permDlg-' + permDialogKey"
+      v-model="permVisible"
+      title="分配权限"
+      width="700px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
       <div class="mb-3 flex items-center gap-3">
         <el-input
           v-model="permSearchText"
@@ -278,11 +453,15 @@ onMounted(fetchData);
           class="w-56!"
         />
         <el-button size="small" @click="handlePermExpandAll">
-          {{ permExpandAll ? '折叠全部' : '展开全部' }}
+          {{ permExpandAll ? "折叠全部" : "展开全部" }}
         </el-button>
         <div class="flex-1" />
-        <span class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">
-          已选 {{ checkedPermIds.length }} / 共 {{ countPermNodes(permTreeData) }} 项
+        <span
+          class="text-xs"
+          :style="{ color: 'var(--el-text-color-secondary)' }"
+        >
+          已选 {{ checkedPermIds.length }} / 共
+          {{ countPermNodes(permTreeData) }} 项
         </span>
       </div>
       <el-scrollbar max-height="50vh">
@@ -298,7 +477,9 @@ onMounted(fetchData);
       </el-scrollbar>
       <template #footer>
         <el-button @click="permVisible = false">取消</el-button>
-        <el-button type="primary" :loading="permSaving" @click="handleSavePerm">保存</el-button>
+        <el-button type="primary" :loading="permSaving" @click="handleSavePerm"
+          >保存</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -309,13 +490,17 @@ onMounted(fetchData);
   flex: 1;
   min-width: 260px;
 }
+
 .search-input :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color))
+    inset;
 }
+
 :deep(.el-table__body-wrapper .el-table__cell) {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }
