@@ -178,42 +178,18 @@ async function openPermission(row: any) {
   currentRoleId = row.id;
   try {
     const res = await api.get(`/sys/role/${row.id}/permissions`);
-    console.log(
-      "[openPermission] API 返回的完整 data:",
-      JSON.stringify(res.data)
-    );
-    console.log("[openPermission] checkedPermIds:", res.data?.checkedPermIds);
-    console.log(
-      "[openPermission] checkedPermIds 类型:",
-      res.data?.checkedPermIds?.map((v: any) => typeof v)
-    );
-    console.log(
-      "[openPermission] permissionTree 节点 id 类型:",
-      res.data?.permissionTree?.[0]
-        ? typeof res.data.permissionTree[0].id
-        : "tree为空"
-    );
     permTreeData.value = res.data.permissionTree || [];
     checkedPermIds.value = res.data.checkedPermIds || [];
   } catch {
     /* empty */
   }
-  console.log(
-    "[openPermission] 赋值后 checkedPermIds.value:",
-    checkedPermIds.value
-  );
   permDialogKey.value++;
   permVisible.value = true;
+  // 双 nextTick 确保 el-tree 完全初始化后再设勾选状态
   await nextTick();
-  console.log(
-    "[openPermission] setCheckedKeys 调用前 checkedPermIds.value:",
-    checkedPermIds.value
-  );
-  console.log(
-    "[openPermission] setCheckedKeys 前 treeRef:",
-    !!permTreeRef.value
-  );
-  permTreeRef.value?.setCheckedKeys(checkedPermIds.value, false);
+  await nextTick();
+  // leafOnly=true: 只勾选叶子节点，父节点状态由级联自动计算，避免父节点级联导致全选
+  permTreeRef.value?.setCheckedKeys([...checkedPermIds.value], true);
 }
 
 const permSearchText = ref("");
@@ -250,20 +226,11 @@ function handlePermExpandAll() {
 async function handleSavePerm() {
   permSaving.value = true;
   try {
-    const checked = permTreeRef.value?.getCheckedKeys() || [];
-    const halfChecked = permTreeRef.value?.getHalfCheckedKeys?.() || [];
-    const permIds = [...checked, ...halfChecked];
-    console.log("[handleSavePerm] 提交的 permIds:", permIds);
-    console.log(
-      "[handleSavePerm] checked:",
-      checked,
-      "halfChecked:",
-      halfChecked
-    );
+    // 只保存明确勾选的节点，不存半选父节点（半选是级联 UI 状态，不应持久化）
+    const permIds = permTreeRef.value?.getCheckedKeys() || [];
     await api.put(`/sys/role/${currentRoleId}/permissions`, {
       perm_ids: permIds
     });
-    // 同步本地状态，防止下次打开弹窗闪烁旧数据
     checkedPermIds.value = permIds;
     ElMessage.success("权限分配成功");
     permVisible.value = false;
