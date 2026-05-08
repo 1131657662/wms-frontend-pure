@@ -210,6 +210,31 @@ export function formatDocType(v: string | null | undefined): StatusResult {
   return toStatusResult(v, DOC_TYPE_MAP, DOC_TYPE_TAG);
 }
 
+// ===================================================================
+// 消息类型映射 — 对照后端消息发送支持的四种类型
+// ===================================================================
+
+/** 消息类型 → 中文 */
+export const MESSAGE_TYPE_MAP: Record<string, string> = {
+  announcement: "系统公告",
+  alert_low: "低库存预警",
+  alert_high: "高库存预警",
+  alert_zero: "零库存预警"
+};
+
+/** 消息类型 → el-tag type */
+export const MESSAGE_TYPE_TAG: Record<string, string> = {
+  announcement: "primary",
+  alert_low: "danger",
+  alert_high: "warning",
+  alert_zero: "info"
+};
+
+/** 消息类型格式化 */
+export function formatMessageType(v: string | null | undefined): StatusResult {
+  return toStatusResult(v, MESSAGE_TYPE_MAP, MESSAGE_TYPE_TAG);
+}
+
 /** 业务类型格式化（无 tag type 映射，统一用 info） */
 export function formatBusinessType(v: string | null | undefined): string {
   if (!v) return "—";
