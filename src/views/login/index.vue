@@ -89,7 +89,7 @@ useEventListener(document, "keydown", ({ code }) => {
           <Motion>
             <div class="brand-area">
               <img src="/logo.png" alt="茂智LOGO" class="brand-logo" />
-              <h2 class="brand-title">茂智仓储</h2>
+              <h2 class="brand-title">茂智物流</h2>
             </div>
           </Motion>
           <el-form
@@ -137,10 +137,17 @@ useEventListener(document, "keydown", ({ code }) => {
         </div>
       </div>
     </div>
-    <div
-      class="w-full flex-c absolute bottom-3 text-sm text-[rgba(0,0,0,0.6)] dark:text-[rgba(220,220,242,0.8)]"
-    >
-      Copyright © 2026-present 茂智仓储WMS管理系统 保留所有权利
+    <div class="w-full flex-c absolute bottom-3">
+      <div class="beian-info">
+        <img src="/beian-icon.png" alt="公安备案图标" class="beian-icon" />
+        <a
+          href="https://beian.mps.gov.cn/#/query/webSearch?code=33028202001106"
+          target="_blank"
+          rel="noreferrer"
+          class="beian-link"
+          >浙公网安备33028202001106号</a
+        >
+      </div>
     </div>
   </div>
 </template>
@@ -173,12 +180,36 @@ useEventListener(document, "keydown", ({ code }) => {
   font-family: var(--el-font-family);
   font-size: 32px;
   font-weight: 600;
-  color: #ea5413;
   line-height: 1.2;
+  color: #ea5413;
   text-transform: none;
 
   .dark & {
     color: #ff7a45;
+  }
+}
+
+.beian-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.beian-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.beian-link {
+  font-size: 14px;
+  color: #909399;
+  text-decoration: none;
+
+  &:hover {
+    color: #909399;
+    text-decoration: none;
   }
 }
 </style>
