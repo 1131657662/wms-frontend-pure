@@ -36,13 +36,24 @@ onMounted(async () => {
 async function handlePrint(tmpl: any) {
   printing.value = true;
   try {
-    const res = await api.post(
+    // 后端返回 JSON：{ code, data: { url, fileName } }，由 Node 拉积木并落盘到 /public/temp/print/
+    const res = (await api.post(
       `/print/${tmpl.id}/${props.businessId}`,
-      {},
-      { responseType: "blob" }
-    );
-    const blob = new Blob([res as any], { type: "application/pdf" });
-    window.open(URL.createObjectURL(blob), "_blank");
+      {}
+    )) as {
+      code?: number;
+      message?: string;
+      data?: { url?: string; fileName?: string };
+    };
+    const pdfUrl = res?.data?.url;
+    if (!pdfUrl) {
+      ElMessage.error(res?.message || "打印失败，未返回文件地址");
+      return;
+    }
+    const openUrl = pdfUrl.startsWith("http")
+      ? pdfUrl
+      : `${window.location.origin}${pdfUrl}`;
+    window.open(openUrl, "_blank");
   } catch (e: any) {
     ElMessage.error(e.response?.data?.message || "打印失败");
   } finally {
