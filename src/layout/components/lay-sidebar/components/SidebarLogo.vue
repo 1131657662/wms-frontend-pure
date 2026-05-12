@@ -53,19 +53,18 @@ const { title, getLogo } = useNav();
 
     img {
       display: inline-block;
-      height: 32px;
       flex-shrink: 0;
+      height: 32px;
     }
 
     .sidebar-title {
       display: inline-block;
-      height: 32px;
       margin-left: 10px;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 18px;
+      font-size: 28px;
       font-weight: 600;
-      line-height: 32px;
+      line-height: 1.15;
       color: #ea5413;
       white-space: nowrap;
 
