@@ -1,5 +1,5 @@
 <template>
-  <div class="quick-add-select quick-add-select--focus-ring">
+  <div class="quick-add-select">
     <el-select
       :model-value="modelValue"
       v-bind="selectAttrs"
@@ -121,15 +121,6 @@ function onAdded(record: any) {
 .quick-add-select :deep(.el-select) {
   flex: 1;
   min-width: 0;
-}
-
-.quick-add-select--focus-ring {
-  border-radius: var(--el-border-radius-base);
-  transition: box-shadow 0.15s ease;
-}
-
-.quick-add-select--focus-ring:focus-within {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
 }
 
 .add-btn {

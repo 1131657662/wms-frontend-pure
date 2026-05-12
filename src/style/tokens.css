@@ -20,9 +20,11 @@
   --el-card-border-color: rgba(0, 0, 0, 0.04);
 
   /* 阴影层级 — 弱化 Element Plus 默认深投影，对齐 Dashboard */
-  --el-box-shadow-light: 0 0 0 1px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02);
-  --el-box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04);
-  --el-box-shadow-dark: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.04);
+  --el-box-shadow-light:
+    0 0 0 1px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --el-box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --el-box-shadow-dark:
+    0 0 0 1px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.04);
 
   /* 表格行 hover — 极浅底色，替代亮色高亮 */
   --el-table-row-hover-bg-color: rgba(0, 0, 0, 0.02);
@@ -57,8 +59,9 @@
   --dash-card-bg: #fff;
   --dash-border: 1px solid rgba(0, 0, 0, 0.04);
   --dash-border-hover: 1px solid rgba(0, 0, 0, 0.06);
-  --dash-shadow: 0 0 0 1px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02);
-  --dash-shadow-hover: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.04);
+  --dash-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --dash-shadow-hover:
+    0 0 0 1px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.04);
   --dash-gap: 24px;
   --dash-section-gap: 32px;
   --dash-card-pad: 24px;
@@ -78,9 +81,15 @@
 html.dark {
   --dash-border: 1px solid rgba(255, 255, 255, 0.06);
   --dash-border-hover: 1px solid rgba(255, 255, 255, 0.12);
-  --dash-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 1px 3px rgba(0,0,0,0.3);
-  --dash-shadow-hover: 0 0 0 1px rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.45);
-  --dash-card-bg: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  --dash-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --dash-shadow-hover:
+    0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.45);
+  --dash-card-bg: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.01)
+  );
   --el-border-radius-base: 8px;
   --el-border-radius-small: 4px;
   --el-border-radius-round: 8px;
@@ -90,9 +99,12 @@ html.dark {
   --el-border-color-lighter: rgba(255, 255, 255, 0.06);
   --el-border-color-extra-light: rgba(255, 255, 255, 0.03);
   --el-card-border-color: rgba(255, 255, 255, 0.06);
-  --el-box-shadow-light: 0 0 0 1px rgba(255,255,255,0.02), 0 1px 3px rgba(0,0,0,0.3);
-  --el-box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.4);
-  --el-box-shadow-dark: 0 0 0 1px rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.45);
+  --el-box-shadow-light:
+    0 0 0 1px rgba(255, 255, 255, 0.02), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --el-box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --el-box-shadow-dark:
+    0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.45);
   --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.04);
   --el-component-size: 36px;
   --el-input-focus-border-color: var(--el-color-primary-light-5);
@@ -111,6 +123,14 @@ html.dark {
 .el-select__wrapper.is-focused,
 .el-select__wrapper.is-hovering {
   box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+}
+
+/*
+ * 组合框内真实焦点落在子节点上；全局 :focus-visible 会再画 outline，与 wrapper 的 inset 叠成双圈。
+ * 键盘焦点仍由 .el-select__wrapper.is-focused 的描边体现。
+ */
+.el-select .el-select__wrapper :focus-visible {
+  outline: none;
 }
 
 /* 必填星号颜色和位置 */
@@ -135,7 +155,7 @@ html.dark {
   transition: all 0.1s cubic-bezier(0.4, 0, 1, 1);
 }
 .el-button:hover {
-  transition: all 0.25s cubic-bezier(0.25, 0.1, 0.1, 1.0);
+  transition: all 0.25s cubic-bezier(0.25, 0.1, 0.1, 1);
 }
 .el-button:active {
   transform: scale(0.97);
@@ -146,22 +166,30 @@ html.dark {
   transition: background-color 0.1s cubic-bezier(0.4, 0, 1, 1);
 }
 .el-table__body tr:hover > td {
-  transition: background-color 0.25s cubic-bezier(0.25, 0.1, 0.1, 1.0) !important;
+  transition: background-color 0.25s cubic-bezier(0.25, 0.1, 0.1, 1) !important;
 }
 
 /* 菜单项 hover 柔化 */
 .el-menu .el-menu-item,
 .el-menu .el-sub-menu__title {
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 /* 弹窗打开动画 — 从中心微放大 */
 .el-dialog {
-  animation: dialog-enter 0.25s cubic-bezier(0.25, 0.1, 0.1, 1.0);
+  animation: dialog-enter 0.25s cubic-bezier(0.25, 0.1, 0.1, 1);
 }
 @keyframes dialog-enter {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 标签页切换 — 淡入 */
@@ -169,8 +197,12 @@ html.dark {
   animation: tab-fade 0.2s ease;
 }
 @keyframes tab-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* 键盘焦点指示 — 可见焦点环，仅键盘导航时显示 */

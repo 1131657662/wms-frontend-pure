@@ -188,9 +188,10 @@
   }
 }
 
-/* WMS：表格内远程搜索 el-select 整块聚焦描边 */
-.wms-remote-select.el-select:focus-within,
-.wms-remote-select:focus-within {
+/*
+ * 远程 el-select 仅用 wrapper 的聚焦描边（见 tokens.css .el-select__wrapper.is-focused）。
+ * 勿在 .el-select 根节点再叠一层 inset box-shadow，否则与 wrapper 双描边。
+ */
+.wms-remote-select.el-select {
   border-radius: var(--el-border-radius-base);
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
 }
