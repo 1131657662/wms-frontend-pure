@@ -59,21 +59,6 @@ export type UserInfoResult = {
   data: UserInfo;
 };
 
-type ResultTable = {
-  code: number;
-  message: string;
-  data?: {
-    /** 列表数据 */
-    list: Array<any>;
-    /** 总条目数 */
-    total?: number;
-    /** 每页显示条目个数 */
-    pageSize?: number;
-    /** 当前页数 */
-    currentPage?: number;
-  };
-};
-
 /** 登录——对接 WMS 后端 */
 export const getLogin = async (data?: object) => {
   try {
@@ -117,9 +102,12 @@ export const getMine = async () => {
   return { code: 0, data: res.data };
 };
 
-/** 账户设置-个人安全日志 */
-export const getMineLogs = (data?: object) => {
-  return http.request<ResultTable>("get", "/mine-logs", { data });
+/** 账户设置-个人安全日志（WMS 后端） */
+export const getSecurityLogsApi = (params?: {
+  page?: number;
+  pageSize?: number;
+}) => {
+  return api.get("/user/security-logs", { params });
 };
 
 /** 账户设置-修改密码 */

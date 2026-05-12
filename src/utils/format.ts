@@ -219,7 +219,10 @@ export const MESSAGE_TYPE_MAP: Record<string, string> = {
   announcement: "系统公告",
   alert_low: "低库存预警",
   alert_high: "高库存预警",
-  alert_zero: "零库存预警"
+  alert_zero: "零库存预警",
+  order_submit: "订单提交",
+  order_audit: "订单审核",
+  alert_normal: "预警恢复"
 };
 
 /** 消息类型 → el-tag type */
@@ -227,7 +230,10 @@ export const MESSAGE_TYPE_TAG: Record<string, string> = {
   announcement: "primary",
   alert_low: "danger",
   alert_high: "warning",
-  alert_zero: "info"
+  alert_zero: "info",
+  order_submit: "warning",
+  order_audit: "success",
+  alert_normal: "info"
 };
 
 /** 消息类型格式化 */

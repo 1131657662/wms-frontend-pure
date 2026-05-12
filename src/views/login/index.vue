@@ -88,8 +88,8 @@ useEventListener(document, "keydown", ({ code }) => {
         <div class="login-form">
           <Motion>
             <div class="brand-area">
-              <img src="/logo.png" alt="茂智LOGO" class="brand-logo" />
-              <h2 class="brand-title">茂智物流</h2>
+              <img src="/logo.png" alt="茂智云仓" class="brand-logo" />
+              <h2 class="brand-title">茂智云仓</h2>
             </div>
           </Motion>
           <el-form
@@ -137,17 +137,11 @@ useEventListener(document, "keydown", ({ code }) => {
         </div>
       </div>
     </div>
-    <div class="w-full flex-c absolute bottom-3">
-      <div class="beian-info">
-        <img src="/beian-icon.png" alt="公安备案图标" class="beian-icon" />
-        <a
-          href="https://beian.mps.gov.cn/#/query/webSearch?code=33028202001106"
-          target="_blank"
-          rel="noreferrer"
-          class="beian-link"
-          >浙公网安备33028202001106号</a
-        >
-      </div>
+    <div
+      class="w-full flex-c absolute bottom-3 text-sm"
+      style="color: var(--el-text-color-secondary)"
+    >
+      Copyright © 2026 茂智物流有限公司 版权所有
     </div>
   </div>
 </template>

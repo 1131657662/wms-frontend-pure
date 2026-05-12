@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { QuickAddSelect } from "@/components/QuickAddSelect";
 import api from "@/api/wms";
+import { useElTableColumnWidths } from "@/composables/useElTableColumnWidths";
 
 defineOptions({ name: "InboundOrderForm" });
 
@@ -60,8 +61,6 @@ const headerCellStyle = {
   fontSize: "13px"
 };
 
-const details = ref<any[]>([initDetail()]);
-
 function initDetail() {
   return {
     uuid: uid(),
@@ -73,6 +72,20 @@ function initDetail() {
     detail_remark: ""
   };
 }
+
+const details = ref<any[]>([initDetail()]);
+
+const { widthFor: detailColWidth, onHeaderDragEnd: onDetailHeaderDragEnd } =
+  useElTableColumnWidths("wms-inbound-form-detail-cols", {
+    "#": 50,
+    产品编码: 200,
+    产品名称: 130,
+    型号: 130,
+    入库件数: 130,
+    入库吨位: 150,
+    备注: 200,
+    操作: 80
+  });
 
 const totalQty = computed(() =>
   details.value.reduce((s, d) => s + (Number(d.inbound_qty) || 0), 0)
@@ -294,7 +307,9 @@ async function loadDict() {
       label: d.dict_label,
       value: d.dict_value
     }));
-  } catch { /* 字典加载失败使用空数组 */ }
+  } catch {
+    /* 字典加载失败使用空数组 */
+  }
 }
 
 onMounted(async () => {
@@ -313,10 +328,7 @@ onMounted(async () => {
 <template>
   <div class="px-5 py-4">
     <!-- 主表信息卡片（标题+按钮同行） -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div class="flex-bc mb-5">
         <div
           class="flex items-center gap-2 text-sm font-semibold"
@@ -442,10 +454,7 @@ onMounted(async () => {
     </div>
 
     <!-- 明细信息卡片 -->
-    <div
-      class="wms-card"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card" :style="{ padding: '20px 24px' }">
       <div class="flex-bc mb-4">
         <div
           class="flex items-center gap-2 text-sm font-semibold"
@@ -460,16 +469,27 @@ onMounted(async () => {
           >添加明细</el-button
         >
       </div>
-      <el-table border
+      <el-table
+        border
         :data="details"
         stripe
         row-key="uuid"
         show-summary
         :summary-method="getSummary"
         :header-cell-style="headerCellStyle"
+        @header-dragend="onDetailHeaderDragEnd"
       >
-        <el-table-column type="index" label="#" width="50" />
-        <el-table-column label="产品编码" width="200">
+        <el-table-column
+          type="index"
+          label="#"
+          :width="detailColWidth('#')"
+          resizable
+        />
+        <el-table-column
+          label="产品编码"
+          :width="detailColWidth('产品编码')"
+          resizable
+        >
           <template #default="{ row, $index }">
             <el-select
               v-model="row.product_code"
@@ -477,7 +497,7 @@ onMounted(async () => {
               remote
               :remote-method="(q: string) => searchProduct(q)"
               :loading="productLoading"
-              class="w-full!"
+              class="w-full! wms-remote-select"
               clearable
               @change="(v: string) => onProductChange(v, $index)"
             >
@@ -490,9 +510,25 @@ onMounted(async () => {
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column prop="product_name" label="产品名称" width="130" show-overflow-tooltip />
-        <el-table-column prop="product_model" label="型号" width="130" show-overflow-tooltip />
-        <el-table-column label="入库件数" width="130">
+        <el-table-column
+          prop="product_name"
+          label="产品名称"
+          :width="detailColWidth('产品名称')"
+          show-overflow-tooltip
+          resizable
+        />
+        <el-table-column
+          prop="product_model"
+          label="型号"
+          :width="detailColWidth('型号')"
+          show-overflow-tooltip
+          resizable
+        />
+        <el-table-column
+          label="入库件数"
+          :width="detailColWidth('入库件数')"
+          resizable
+        >
           <template #default="{ row }">
             <el-input-number
               v-model="row.inbound_qty"
@@ -502,7 +538,11 @@ onMounted(async () => {
             />
           </template>
         </el-table-column>
-        <el-table-column label="入库吨位" width="150">
+        <el-table-column
+          label="入库吨位"
+          :width="detailColWidth('入库吨位')"
+          resizable
+        >
           <template #default="{ row }">
             <el-input-number
               v-model="row.inbound_weight"
@@ -513,12 +553,21 @@ onMounted(async () => {
             />
           </template>
         </el-table-column>
-        <el-table-column label="备注" min-width="200">
+        <el-table-column
+          label="备注"
+          :min-width="detailColWidth('备注')"
+          resizable
+        >
           <template #default="{ row }">
             <el-input v-model="row.detail_remark" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="80" fixed="right">
+        <el-table-column
+          label="操作"
+          :width="detailColWidth('操作')"
+          fixed="right"
+          resizable
+        >
           <template #default="{ $index }">
             <el-button
               link

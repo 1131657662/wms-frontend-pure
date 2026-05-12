@@ -187,3 +187,10 @@
     background: rgb(199 201 203); /* 滑块hover颜色 */
   }
 }
+
+/* WMS：表格内远程搜索 el-select 整块聚焦描边 */
+.wms-remote-select.el-select:focus-within,
+.wms-remote-select:focus-within {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+}

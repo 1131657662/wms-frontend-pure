@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from "dayjs";
-import { getMineLogs } from "@/api/user";
+import { getSecurityLogsApi } from "@/api/user";
 import { reactive, ref, onMounted } from "vue";
 import { deviceDetection } from "@pureadmin/utils";
 import type { PaginationProps } from "@pureadmin/table";
@@ -55,17 +55,33 @@ const columns: TableColumnList = [
 
 async function onSearch() {
   loading.value = true;
-  const { code, data } = await getMineLogs();
-  if (code === 0) {
-    dataList.value = data.list;
-    pagination.total = data.total;
-    pagination.pageSize = data.pageSize;
-    pagination.currentPage = data.currentPage;
-  }
-
-  setTimeout(() => {
+  try {
+    const res: any = await getSecurityLogsApi({
+      page: pagination.currentPage,
+      pageSize: pagination.pageSize
+    });
+    if (res.code === 200 && res.data) {
+      dataList.value = res.data.list || [];
+      pagination.total = res.data.total ?? 0;
+      if (res.data.pageSize != null) pagination.pageSize = res.data.pageSize;
+      if (res.data.currentPage != null) {
+        pagination.currentPage = res.data.currentPage;
+      }
+    }
+  } finally {
     loading.value = false;
-  }, 200);
+  }
+}
+
+function handleSizeChange(val: number) {
+  pagination.pageSize = val;
+  pagination.currentPage = 1;
+  onSearch();
+}
+
+function handleCurrentChange(val: number) {
+  pagination.currentPage = val;
+  onSearch();
 }
 
 onMounted(() => {
@@ -78,11 +94,12 @@ onMounted(() => {
     <h3 class="my-8!">安全日志</h3>
     <pure-table
       row-key="id"
-     
       :loading="loading"
       :data="dataList"
       :columns="columns"
       :pagination="pagination"
+      @page-size-change="handleSizeChange"
+      @page-current-change="handleCurrentChange"
     />
   </div>
 </template>

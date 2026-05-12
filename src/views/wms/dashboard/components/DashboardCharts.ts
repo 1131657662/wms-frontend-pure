@@ -23,7 +23,7 @@ function tooltipBorder(isDark: boolean) {
   return isDark ? "#555" : "#ddd";
 }
 
-/** 饼图 — 单据类型分布 */
+/** 饼图 — 本月出入库吨位占比（不含盘点） */
 export function getPieOption(
   data: { name: string; value: number }[],
   isDark: boolean
@@ -34,8 +34,13 @@ export function getPieOption(
       backgroundColor: tooltipBg(isDark),
       borderColor: tooltipBorder(isDark),
       textStyle: { color: textColor(isDark) },
-      extraCssText: "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);",
-      formatter: "{b}: {c} 单 ({d}%)"
+      extraCssText:
+        "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);",
+      formatter: (p: any) => {
+        const v = Number(p.value);
+        const t = `${p.name}: ${v.toFixed(4)} 吨 (${p.percent}%)`;
+        return t;
+      }
     },
     legend: {
       bottom: 0,
@@ -60,9 +65,7 @@ export function getPieOption(
         data: data.map((d, i) => ({
           ...d,
           itemStyle: {
-            color: [COLORS.primary, COLORS.success, COLORS.warning][
-              i % 3
-            ]
+            color: [COLORS.primary, COLORS.success, COLORS.warning][i % 3]
           }
         }))
       }
@@ -71,9 +74,9 @@ export function getPieOption(
   };
 }
 
-/** 分组柱状图 — 近 N 天出入库趋势 */
+/** 分组柱状图 — 近 N 天出入库吨位 */
 export function getBarOption(
-  data: { name: string; inboundCount: number; outboundCount: number }[],
+  data: { name: string; inboundWeight: number; outboundWeight: number }[],
   isDark: boolean
 ): EChartsOption {
   return {
@@ -82,7 +85,9 @@ export function getBarOption(
       backgroundColor: tooltipBg(isDark),
       borderColor: tooltipBorder(isDark),
       textStyle: { color: textColor(isDark) },
-      extraCssText: "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);"
+      extraCssText:
+        "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);",
+      valueFormatter: (v: number) => `${Number(v).toFixed(4)} 吨`
     },
     legend: {
       data: ["入库", "出库"],
@@ -92,15 +97,17 @@ export function getBarOption(
     grid: { left: 8, right: 8, bottom: 0, top: 36, containLabel: true },
     xAxis: {
       type: "category",
-      data: data.map((d) => d.name),
+      data: data.map(d => d.name),
       axisLine: { lineStyle: { color: gridColor(isDark) } },
       axisLabel: { color: textColor(isDark) }
     },
     yAxis: {
       type: "value",
-      minInterval: 1,
       splitLine: { lineStyle: { color: gridColor(isDark) } },
-      axisLabel: { color: textColor(isDark) }
+      axisLabel: {
+        color: textColor(isDark),
+        formatter: (v: number) => Number(v).toFixed(2)
+      }
     },
     series: [
       {
@@ -108,23 +115,23 @@ export function getBarOption(
         type: "bar",
         barWidth: 14,
         itemStyle: { color: COLORS.primary, borderRadius: [4, 4, 0, 0] },
-        data: data.map((d) => d.inboundCount)
+        data: data.map(d => d.inboundWeight)
       },
       {
         name: "出库",
         type: "bar",
         barWidth: 14,
         itemStyle: { color: COLORS.success, borderRadius: [4, 4, 0, 0] },
-        data: data.map((d) => d.outboundCount)
+        data: data.map(d => d.outboundWeight)
       }
     ],
     animationDuration: 600
   };
 }
 
-/** 双折线图 — 近 12 月月度趋势 */
+/** 双折线图 — 近 12 月月度吨位趋势 */
 export function getLineOption(
-  data: { name: string; estimate: number; actual: number }[],
+  data: { name: string; inboundWeight: number; outboundWeight: number }[],
   isDark: boolean
 ): EChartsOption {
   return {
@@ -133,7 +140,9 @@ export function getLineOption(
       backgroundColor: tooltipBg(isDark),
       borderColor: tooltipBorder(isDark),
       textStyle: { color: textColor(isDark) },
-      extraCssText: "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);"
+      extraCssText:
+        "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);",
+      valueFormatter: (v: number) => `${Number(v).toFixed(4)} 吨`
     },
     legend: {
       data: ["入库", "出库"],
@@ -143,16 +152,18 @@ export function getLineOption(
     grid: { left: 8, right: 8, bottom: 0, top: 36, containLabel: true },
     xAxis: {
       type: "category",
-      data: data.map((d) => d.name),
+      data: data.map(d => d.name),
       boundaryGap: false,
       axisLine: { lineStyle: { color: gridColor(isDark) } },
       axisLabel: { color: textColor(isDark) }
     },
     yAxis: {
       type: "value",
-      minInterval: 1,
       splitLine: { lineStyle: { color: gridColor(isDark) } },
-      axisLabel: { color: textColor(isDark) }
+      axisLabel: {
+        color: textColor(isDark),
+        formatter: (v: number) => Number(v).toFixed(2)
+      }
     },
     series: [
       {
@@ -174,12 +185,15 @@ export function getLineOption(
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: isDark ? "rgba(64,158,255,.25)" : "rgba(64,158,255,.15)" },
+              {
+                offset: 0,
+                color: isDark ? "rgba(64,158,255,.25)" : "rgba(64,158,255,.15)"
+              },
               { offset: 1, color: "rgba(64,158,255,0)" }
             ]
           }
         },
-        data: data.map((d) => d.estimate)
+        data: data.map(d => d.inboundWeight)
       },
       {
         name: "出库",
@@ -200,12 +214,15 @@ export function getLineOption(
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: isDark ? "rgba(103,194,58,.25)" : "rgba(103,194,58,.15)" },
+              {
+                offset: 0,
+                color: isDark ? "rgba(103,194,58,.25)" : "rgba(103,194,58,.15)"
+              },
               { offset: 1, color: "rgba(103,194,58,0)" }
             ]
           }
         },
-        data: data.map((d) => d.actual)
+        data: data.map(d => d.outboundWeight)
       }
     ],
     animationDuration: 600
@@ -227,7 +244,8 @@ export function getRadarOption(
       backgroundColor: tooltipBg(isDark),
       borderColor: tooltipBorder(isDark),
       textStyle: { color: textColor(isDark) },
-      extraCssText: "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);"
+      extraCssText:
+        "border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);"
     },
     legend: {
       data: ["个人", "团队"],
@@ -239,7 +257,7 @@ export function getRadarOption(
       radius: "65%",
       splitNumber: 4,
       axisLabel: { show: false },
-      indicator: data.map((d) => {
+      indicator: data.map(d => {
         let max = d.max;
         if (max <= 0) max = 1;
         else if (max <= 4) max = 5;
@@ -266,19 +284,23 @@ export function getRadarOption(
         type: "radar",
         data: [
           {
-            value: data.map((d) => d.personal),
+            value: data.map(d => d.personal),
             name: "个人",
             lineStyle: { color: COLORS.primary },
-            areaStyle: { color: isDark ? "rgba(64,158,255,.25)" : "rgba(64,158,255,.12)" },
+            areaStyle: {
+              color: isDark ? "rgba(64,158,255,.25)" : "rgba(64,158,255,.12)"
+            },
             itemStyle: { color: COLORS.primary },
             symbol: "circle",
             symbolSize: 5
           },
           {
-            value: data.map((d) => d.team),
+            value: data.map(d => d.team),
             name: "团队",
             lineStyle: { color: COLORS.success },
-            areaStyle: { color: isDark ? "rgba(103,194,58,.25)" : "rgba(103,194,58,.12)" },
+            areaStyle: {
+              color: isDark ? "rgba(103,194,58,.25)" : "rgba(103,194,58,.12)"
+            },
             itemStyle: { color: COLORS.success },
             symbol: "circle",
             symbolSize: 5

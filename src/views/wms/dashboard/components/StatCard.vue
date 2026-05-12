@@ -6,25 +6,39 @@ import SparkLine from "./SparkLine.vue";
 
 defineOptions({ name: "StatCard" });
 
-const props = withDefaults(defineProps<{
-  label: string;
-  value: number;
-  suffix?: string;
-  icon: Component;
-  color: string;
-  trend?: number[];
-  change?: number;
-  loading?: boolean;
-}>(), {
-  suffix: "",
-  loading: false
-});
+const props = withDefaults(
+  defineProps<{
+    label: string;
+    value: number;
+    suffix?: string;
+    icon: Component;
+    color: string;
+    trend?: number[];
+    change?: number;
+    loading?: boolean;
+    /** 若设置则显示固定小数位，不使用数字滚动动画 */
+    decimalPlaces?: number;
+  }>(),
+  {
+    suffix: "",
+    loading: false,
+    decimalPlaces: undefined
+  }
+);
+
+const displayDecimal = computed(() =>
+  props.decimalPlaces !== undefined && props.decimalPlaces >= 0
+    ? Number(props.value ?? 0).toFixed(props.decimalPlaces)
+    : null
+);
 
 const renderedIcon = computed(() => useRenderIcon(props.icon));
 
 function sparkColor() {
   if (props.change === undefined) return props.color;
-  return props.change >= 0 ? "var(--dash-sparkline-up)" : "var(--dash-sparkline-down)";
+  return props.change >= 0
+    ? "var(--dash-sparkline-up)"
+    : "var(--dash-sparkline-down)";
 }
 
 function changePrefix() {
@@ -50,7 +64,11 @@ function changeClass() {
     <div class="stat-body">
       <template v-if="!loading">
         <div class="stat-value">
+          <template v-if="displayDecimal !== null">
+            <span>{{ displayDecimal }}</span>
+          </template>
           <ReNormalCountTo
+            v-else
             :start-val="0"
             :end-val="value"
             :duration="1200"
@@ -59,9 +77,18 @@ function changeClass() {
           <span v-if="suffix" class="stat-suffix">{{ suffix }}</span>
         </div>
         <div v-if="trend && trend.length > 1" class="stat-spark">
-          <SparkLine :data="trend" :color="sparkColor()" :width="80" :height="24" />
+          <SparkLine
+            :data="trend"
+            :color="sparkColor()"
+            :width="80"
+            :height="24"
+          />
         </div>
-        <div v-if="change !== undefined" class="stat-change" :class="changeClass()">
+        <div
+          v-if="change !== undefined"
+          class="stat-change"
+          :class="changeClass()"
+        >
           <span>{{ changePrefix() }} {{ Math.abs(change).toFixed(1) }}%</span>
           <span class="change-vs">vs 昨日</span>
         </div>
@@ -75,50 +102,54 @@ function changeClass() {
 </template>
 
 <style scoped>
-
 .stat-card {
+  padding: var(--dash-card-pad);
+  cursor: default;
   background: var(--dash-card-bg, var(--el-bg-color, #fff));
   border: var(--dash-border);
   border-radius: var(--dash-radius);
   box-shadow: var(--dash-shadow);
-  padding: var(--dash-card-pad);
-  will-change: transform, box-shadow;
   transform: translateY(0);
-  transition: transform 0.1s cubic-bezier(0.4, 0, 1, 1),
-              box-shadow 0.1s cubic-bezier(0.4, 0, 1, 1);
-  cursor: default;
+  transition:
+    transform 0.1s cubic-bezier(0.4, 0, 1, 1),
+    box-shadow 0.1s cubic-bezier(0.4, 0, 1, 1);
+  will-change: transform, box-shadow;
 }
+
 .stat-card:hover {
-  transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.1, 1.0),
-              box-shadow 0.35s cubic-bezier(0.25, 0.1, 0.1, 1.0);
-  transform: translateY(-3px);
-  box-shadow: var(--dash-shadow-hover);
   border: var(--dash-border-hover);
+  box-shadow: var(--dash-shadow-hover);
+  transform: translateY(-3px);
+  transition:
+    transform 0.35s cubic-bezier(0.25, 0.1, 0.1, 1),
+    box-shadow 0.35s cubic-bezier(0.25, 0.1, 0.1, 1);
 }
 
 /* Header */
 .stat-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
+
 .stat-label {
   font-size: var(--dash-label-size);
-  color: var(--el-text-color-secondary);
   font-weight: 500;
-  letter-spacing: 0.01em;
+  color: var(--el-text-color-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
+
 .stat-icon {
-  width: 40px;
-  height: 40px;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: var(--dash-radius-sm);
+  width: 40px;
+  height: 40px;
   font-size: 20px;
-  flex-shrink: 0;
+  border-radius: var(--dash-radius-sm);
 }
 
 /* Value */
@@ -127,16 +158,18 @@ function changeClass() {
   flex-direction: column;
   gap: 8px;
 }
+
 .stat-value {
   display: flex;
-  align-items: baseline;
   gap: 6px;
+  align-items: baseline;
   font-size: var(--dash-kpi-size);
   font-weight: 700;
-  color: var(--el-text-color-primary);
   line-height: 1;
+  color: var(--el-text-color-primary);
   letter-spacing: -0.02em;
 }
+
 .stat-suffix {
   font-size: 14px;
   font-weight: 400;
@@ -151,17 +184,20 @@ function changeClass() {
 
 /* Change */
 .stat-change {
-  font-size: 12px;
   display: flex;
-  align-items: center;
   gap: 4px;
+  align-items: center;
+  font-size: 12px;
 }
+
 .change-up {
   color: var(--dash-sparkline-up);
 }
+
 .change-down {
   color: var(--dash-sparkline-down);
 }
+
 .change-vs {
   color: var(--el-text-color-placeholder);
 }
@@ -174,6 +210,7 @@ function changeClass() {
   border-radius: 6px;
   animation: pulse 1.5s ease-in-out infinite;
 }
+
 .skeleton-spark {
   width: 80px;
   height: 24px;
@@ -181,8 +218,15 @@ function changeClass() {
   border-radius: 4px;
   animation: pulse 1.5s ease-in-out infinite 0.2s;
 }
+
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 </style>

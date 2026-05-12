@@ -1,5 +1,5 @@
 <template>
-  <div class="quick-add-select">
+  <div class="quick-add-select quick-add-select--focus-ring">
     <el-select
       :model-value="modelValue"
       v-bind="selectAttrs"
@@ -24,10 +24,26 @@
       @click="visible = true"
     />
 
-    <AddWarehouseDialog v-if="entityType === 'warehouse'" v-model="visible" @saved="onAdded" />
-    <AddSupplierDialog v-if="entityType === 'supplier'" v-model="visible" @saved="onAdded" />
-    <AddCustomerDialog v-if="entityType === 'customer'" v-model="visible" @saved="onAdded" />
-    <AddVehicleDialog v-if="entityType === 'vehicle'" v-model="visible" @saved="onAdded" />
+    <AddWarehouseDialog
+      v-if="entityType === 'warehouse'"
+      v-model="visible"
+      @saved="onAdded"
+    />
+    <AddSupplierDialog
+      v-if="entityType === 'supplier'"
+      v-model="visible"
+      @saved="onAdded"
+    />
+    <AddCustomerDialog
+      v-if="entityType === 'customer'"
+      v-model="visible"
+      @saved="onAdded"
+    />
+    <AddVehicleDialog
+      v-if="entityType === 'vehicle'"
+      v-model="visible"
+      @saved="onAdded"
+    />
   </div>
 </template>
 
@@ -59,7 +75,13 @@ const emit = defineEmits(["update:modelValue", "added"]);
 const attrs = useAttrs();
 const selectAttrs = computed(() => {
   const {
-    modelValue, options, entityType, canAdd, selectWidth, labelKey, valueKey,
+    modelValue,
+    options,
+    entityType,
+    canAdd,
+    selectWidth,
+    labelKey,
+    valueKey,
     ...rest
   } = { ...props, ...attrs };
   delete (rest as any).onAdded;
@@ -68,12 +90,14 @@ const selectAttrs = computed(() => {
 
 const entityMap: Record<string, any> = {
   warehouse: { valueKey: "warehouse_code", labelKey: "warehouse_name" },
-  supplier:  { valueKey: "supplier_code",  labelKey: "supplier_name" },
-  customer:  { valueKey: "customer_code",  labelKey: "customer_name" },
-  vehicle:   { valueKey: "plate_number",   labelKey: "plate_number" }
+  supplier: { valueKey: "supplier_code", labelKey: "supplier_name" },
+  customer: { valueKey: "customer_code", labelKey: "customer_name" },
+  vehicle: { valueKey: "plate_number", labelKey: "plate_number" }
 };
 
-const config = computed(() => entityMap[props.entityType] || { valueKey: "id", labelKey: "name" });
+const config = computed(
+  () => entityMap[props.entityType] || { valueKey: "id", labelKey: "name" }
+);
 const valueKey = computed(() => props.valueKey || config.value.valueKey);
 const labelKey = computed(() => props.labelKey || config.value.labelKey);
 
@@ -91,6 +115,21 @@ function onAdded(record: any) {
   display: inline-flex;
   gap: 6px;
   align-items: center;
+  max-width: 100%;
+}
+
+.quick-add-select :deep(.el-select) {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-add-select--focus-ring {
+  border-radius: var(--el-border-radius-base);
+  transition: box-shadow 0.15s ease;
+}
+
+.quick-add-select--focus-ring:focus-within {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
 }
 
 .add-btn {

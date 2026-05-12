@@ -25,7 +25,8 @@ const userInfos = reactive({
   nickname: "",
   email: "",
   phone: "",
-  description: ""
+  description: "",
+  wechat_bound: false
 });
 
 const rules = reactive<FormRules<UserInfo>>({
@@ -163,6 +164,15 @@ onMounted(async () => {
           placeholder="请输入联系电话"
           clearable
         />
+      </el-form-item>
+      <el-form-item label="微信小程序">
+        <el-tag v-if="userInfos.wechat_bound" type="success" size="small"
+          >已绑定</el-tag
+        >
+        <el-tag v-else type="info" size="small">未绑定</el-tag>
+        <span class="ml-3 text-sm" style="color: var(--el-text-color-secondary)"
+          >请在微信小程序中完成微信与系统账号绑定</span
+        >
       </el-form-item>
       <el-form-item label="简介">
         <el-input

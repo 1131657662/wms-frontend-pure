@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { QuickAddSelect } from "@/components/QuickAddSelect";
 import api from "@/api/wms";
+import { useElTableColumnWidths } from "@/composables/useElTableColumnWidths";
 
 defineOptions({ name: "OutboundOrderForm" });
 
@@ -61,8 +62,6 @@ const headerCellStyle = {
   fontSize: "13px"
 };
 
-const details = ref<any[]>([initDetail()]);
-
 function initDetail() {
   return {
     uuid: uid(),
@@ -79,6 +78,21 @@ function initDetail() {
     _weightExceed: false
   };
 }
+
+const details = ref<any[]>([initDetail()]);
+
+const { widthFor: detailColWidth, onHeaderDragEnd: onDetailHeaderDragEnd } =
+  useElTableColumnWidths("wms-outbound-form-detail-cols", {
+    "#": 50,
+    产品编码: 200,
+    产品名称: 130,
+    型号: 130,
+    合同号: 130,
+    出库件数: 140,
+    出库吨位: 160,
+    备注: 200,
+    操作: 80
+  });
 
 const totalQty = computed(() =>
   details.value.reduce((s, d) => s + (Number(d.outbound_qty) || 0), 0)
@@ -118,13 +132,31 @@ async function searchCustomer(keyword?: string) {
   }
 }
 
+function applyCustomerFromRecord(c: any) {
+  if (!c) return;
+  form.customer_name = c.customer_name || "";
+  form.customer_address = c.address || "";
+  form.contact_person = c.contact_person || "";
+  form.contact_phone = c.contact_phone || "";
+}
+
+function onCustomerQuickAdded(record: any) {
+  searchCustomer("");
+  if (record?.customer_code) {
+    applyCustomerFromRecord(record);
+    const exists = customerOptions.value.some(
+      (x: any) => x.customer_code === record.customer_code
+    );
+    if (!exists) {
+      customerOptions.value = [record, ...customerOptions.value];
+    }
+  }
+}
+
 function onCustomerChange(code: string) {
   const c = customerOptions.value.find((c: any) => c.customer_code === code);
   if (c) {
-    form.customer_name = c.customer_name || "";
-    form.customer_address = c.address || "";
-    form.contact_person = c.contact_person || "";
-    form.contact_phone = c.contact_phone || "";
+    applyCustomerFromRecord(c);
   } else {
     form.customer_name = "";
     form.customer_address = "";
@@ -350,7 +382,9 @@ async function loadDict() {
       label: d.dict_label,
       value: d.dict_value
     }));
-  } catch { /* 字典加载失败使用空数组 */ }
+  } catch {
+    /* 字典加载失败使用空数组 */
+  }
 }
 
 onMounted(async () => {
@@ -367,10 +401,7 @@ onMounted(async () => {
 <template>
   <div class="px-5 py-4">
     <!-- 主表信息卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div class="flex-bc mb-5">
         <div
           class="flex items-center gap-2 text-sm font-semibold"
@@ -449,6 +480,7 @@ onMounted(async () => {
                 entity-type="vehicle"
                 filterable
                 remote
+                select-width="100%"
                 :remote-method="searchVehicle"
                 :loading="vehicleLoading"
                 :label-key="
@@ -475,10 +507,7 @@ onMounted(async () => {
     </div>
 
     <!-- 客户信息卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-5 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -492,51 +521,71 @@ onMounted(async () => {
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="客户名称" prop="customer_code">
-              <el-tooltip :content="form.customer_name" placement="top" :disabled="!form.customer_name">
-              <QuickAddSelect
-                v-model="form.customer_code"
-                :options="customerOptions"
-                entity-type="customer"
-                filterable
-                remote
-                :remote-method="searchCustomer"
-                :loading="customerLoading"
-                :label-key="(c: any) => c.customer_name"
-                class="w-full!"
-                @change="onCustomerChange"
-                @added="() => searchCustomer('')"
-              />
+              <el-tooltip
+                :content="form.customer_name"
+                placement="top"
+                :disabled="!form.customer_name"
+              >
+                <QuickAddSelect
+                  v-model="form.customer_code"
+                  :options="customerOptions"
+                  entity-type="customer"
+                  filterable
+                  remote
+                  select-width="100%"
+                  :remote-method="searchCustomer"
+                  :loading="customerLoading"
+                  :label-key="(c: any) => c.customer_name"
+                  class="w-full!"
+                  @change="onCustomerChange"
+                  @added="onCustomerQuickAdded"
+                />
               </el-tooltip>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="客户地址">
-              <el-input
-                :model-value="form.customer_address"
-                disabled
-                placeholder="选择客户后自动填充"
-                :title="form.customer_address"
-              />
+              <el-tooltip
+                :content="form.customer_address || '—'"
+                placement="top"
+                :disabled="!form.customer_address"
+              >
+                <el-input
+                  :model-value="form.customer_address"
+                  disabled
+                  placeholder="选择客户后自动填充"
+                />
+              </el-tooltip>
             </el-form-item>
           </el-col>
           <el-col :span="4">
             <el-form-item label="联系人">
-              <el-input
-                :model-value="form.contact_person"
-                disabled
-                placeholder="自动填充"
-                :title="form.contact_person"
-              />
+              <el-tooltip
+                :content="form.contact_person || '—'"
+                placement="top"
+                :disabled="!form.contact_person"
+              >
+                <el-input
+                  :model-value="form.contact_person"
+                  disabled
+                  placeholder="自动填充"
+                />
+              </el-tooltip>
             </el-form-item>
           </el-col>
           <el-col :span="4">
             <el-form-item label="电话">
-              <el-input
-                :model-value="form.contact_phone"
-                disabled
-                placeholder="自动填充"
-                :title="form.contact_phone"
-              />
+              <el-tooltip
+                :content="form.contact_phone || '—'"
+                placement="top"
+                :disabled="!form.contact_phone"
+              >
+                <el-input
+                  :model-value="form.contact_phone"
+                  disabled
+                  placeholder="自动填充"
+                />
+              </el-tooltip>
             </el-form-item>
           </el-col>
         </el-row>
@@ -544,10 +593,7 @@ onMounted(async () => {
     </div>
 
     <!-- 明细信息卡片 -->
-    <div
-      class="wms-card"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card" :style="{ padding: '20px 24px' }">
       <div class="flex-bc mb-4">
         <div
           class="flex items-center gap-2 text-sm font-semibold"
@@ -562,16 +608,27 @@ onMounted(async () => {
           >添加明细</el-button
         >
       </div>
-      <el-table border
+      <el-table
+        border
         :data="details"
         stripe
         row-key="uuid"
         show-summary
         :summary-method="getSummary"
         :header-cell-style="headerCellStyle"
+        @header-dragend="onDetailHeaderDragEnd"
       >
-        <el-table-column type="index" label="#" width="50" />
-        <el-table-column label="产品编码" width="200">
+        <el-table-column
+          type="index"
+          label="#"
+          :width="detailColWidth('#')"
+          resizable
+        />
+        <el-table-column
+          label="产品编码"
+          :width="detailColWidth('产品编码')"
+          resizable
+        >
           <template #default="{ row, $index }">
             <el-select
               v-model="row.product_code"
@@ -579,7 +636,7 @@ onMounted(async () => {
               remote
               :remote-method="(q: string) => searchProduct(q)"
               :loading="productLoading"
-              class="w-full!"
+              class="w-full! wms-remote-select"
               clearable
               @change="(v: string) => onProductChange(v, $index)"
             >
@@ -592,14 +649,34 @@ onMounted(async () => {
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column prop="product_name" label="产品名称" width="130" show-overflow-tooltip />
-        <el-table-column prop="product_model" label="型号" width="130" show-overflow-tooltip />
-        <el-table-column label="合同号" width="130">
+        <el-table-column
+          prop="product_name"
+          label="产品名称"
+          :width="detailColWidth('产品名称')"
+          show-overflow-tooltip
+          resizable
+        />
+        <el-table-column
+          prop="product_model"
+          label="型号"
+          :width="detailColWidth('型号')"
+          show-overflow-tooltip
+          resizable
+        />
+        <el-table-column
+          label="合同号"
+          :width="detailColWidth('合同号')"
+          resizable
+        >
           <template #default="{ row }">
             <el-input v-model="row.contract_no" clearable />
           </template>
         </el-table-column>
-        <el-table-column label="出库件数" width="140">
+        <el-table-column
+          label="出库件数"
+          :width="detailColWidth('出库件数')"
+          resizable
+        >
           <template #default="{ row, $index }">
             <div>
               <el-input-number
@@ -624,7 +701,11 @@ onMounted(async () => {
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="出库吨位" width="160">
+        <el-table-column
+          label="出库吨位"
+          :width="detailColWidth('出库吨位')"
+          resizable
+        >
           <template #default="{ row, $index }">
             <div>
               <el-input-number
@@ -651,12 +732,21 @@ onMounted(async () => {
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="备注" min-width="200">
+        <el-table-column
+          label="备注"
+          :min-width="detailColWidth('备注')"
+          resizable
+        >
           <template #default="{ row }">
             <el-input v-model="row.detail_remark" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="80" fixed="right">
+        <el-table-column
+          label="操作"
+          :width="detailColWidth('操作')"
+          fixed="right"
+          resizable
+        >
           <template #default="{ $index }">
             <el-button
               link
