@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 
 import AddFill from "~icons/ri/add-circle-line";
 import Search from "~icons/ri/search-line";
@@ -117,12 +118,9 @@ const handleCurrentChange = (v: number) => {
 
 async function loadWarehouses() {
   try {
-    warehouses.value =
-      (
-        await api.get("/warehouse/list", {
-          params: { pageSize: 500, enabled: 1 }
-        })
-      ).data.list || [];
+    warehouses.value = await fetchAllListPages("/warehouse/list", {
+      enabled: 1
+    });
   } catch {
     /* empty */
   }

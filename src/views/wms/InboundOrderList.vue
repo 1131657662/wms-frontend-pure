@@ -12,6 +12,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList } from "@/utils/responseList";
 import * as XLSX from "xlsx";
 
 import AddFill from "~icons/ri/add-circle-line";
@@ -202,10 +203,9 @@ function handleRowClick(row: any, _column: any, event: Event) {
 
 async function loadWarehouses() {
   try {
-    const res = await api.get("/warehouse/list", {
-      params: { pageSize: 500, enabled: 1 }
+    warehouses.value = await fetchAllListPages("/warehouse/list", {
+      enabled: 1
     });
-    warehouses.value = res.data.list || [];
   } catch {
     /* empty */
   }
@@ -273,10 +273,9 @@ const statsCards = computed(() => [
 
 async function loadSuppliers() {
   try {
-    const res = await api.get("/supplier/list", {
-      params: { page: 1, pageSize: 100, enabled: 1 }
+    supplierOptions.value = await fetchAllListPages("/supplier/list", {
+      enabled: 1
     });
-    supplierOptions.value = res.data.list || [];
   } catch {
     /* empty */
   }
@@ -552,7 +551,7 @@ function formatTime(t: string) {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    const list = res.data || [];
+    const list = responseList(res.data);
     billTypeOptions.value = list.map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value

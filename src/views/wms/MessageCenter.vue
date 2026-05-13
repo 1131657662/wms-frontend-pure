@@ -5,6 +5,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { hasPerms } from "@/utils/auth";
+import { responseList } from "@/utils/responseList";
 import { MESSAGE_TYPE_MAP, MESSAGE_TYPE_TAG } from "@/utils/format";
 
 import Message from "~icons/ri/message-2-line";
@@ -23,7 +24,7 @@ const typeOptions = ref<{ label: string; value: string }[]>([]);
 async function loadTypeDict() {
   try {
     const res = await api.get("/sys/dict/data/message_type");
-    const list = res.data || [];
+    const list = responseList(res.data);
     typeOptions.value = list.map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
@@ -392,11 +393,11 @@ onMounted(() => {
           :data="list"
           :columns="dynamicColumns"
           :pagination="pagination"
+          :header-cell-style="headerCellStyle"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :header-cell-style="headerCellStyle"
           @selection-change="onSelectionChange"
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"

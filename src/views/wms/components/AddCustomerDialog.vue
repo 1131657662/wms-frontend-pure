@@ -102,6 +102,7 @@
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
@@ -151,7 +152,7 @@ async function fetchSuggest(
     const res = await api.get("/customer/suggest", {
       params: { field, q, limit: 25 }
     });
-    const rows = res.data || [];
+    const rows = responseList(res.data);
     const prop = FIELD_PROP[field];
     const seen = new Set<string>();
     const list: { value: string }[] = [];
@@ -170,7 +171,7 @@ async function fetchSuggest(
 onMounted(async () => {
   try {
     const res = await api.get("/sys/dict/data/customer_level");
-    customerLevelOptions.value = (res.data || []).map((d: any) => ({
+    customerLevelOptions.value = responseList(res.data).map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
     }));

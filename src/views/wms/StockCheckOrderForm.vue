@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { QuickAddSelect } from "@/components/QuickAddSelect";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 
 defineOptions({ name: "StockCheckOrderForm" });
 
@@ -75,23 +76,30 @@ function getSummary({ columns }: any) {
 }
 
 async function loadWarehouses() {
-  const res = await api.get("/warehouse/list", {
-    params: { pageSize: 500, enabled: 1 }
+  warehouses.value = await fetchAllListPages("/warehouse/list", {
+    enabled: 1
   });
-  warehouses.value = res.data.list || [];
 }
 
 async function onWarehouseChange(_code: string) {
+  if (!form.warehouse_code) {
+    details.value = [];
+    return;
+  }
   await loadStock();
 }
 
 async function loadStock() {
+  if (!form.warehouse_code) {
+    ElMessage.warning("请先选择仓库");
+    return;
+  }
   stockLoading.value = true;
   try {
-    const params: any = { pageSize: 500 };
-    if (form.warehouse_code) params.warehouse_code = form.warehouse_code;
-    const res = await api.get("/stock/list", { params });
-    details.value = (res.data.list || []).map((s: any) => ({
+    const rows = await fetchAllListPages("/stock/list", {
+      warehouse_code: form.warehouse_code
+    });
+    details.value = rows.map((s: any) => ({
       uuid: uid(),
       warehouse_name: s.warehouse_name || form.warehouse_code || "",
       product_code: s.product_code,

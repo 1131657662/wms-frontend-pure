@@ -4,6 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { QuickAddSelect } from "@/components/QuickAddSelect";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList } from "@/utils/responseList";
 import { useElTableColumnWidths } from "@/composables/useElTableColumnWidths";
 
 defineOptions({ name: "OutboundOrderForm" });
@@ -126,7 +128,7 @@ async function searchCustomer(keyword?: string) {
     const res = await api.get("/customer/search", {
       params: { keyword: keyword || undefined, pageSize: 200 }
     });
-    customerOptions.value = res.data || [];
+    customerOptions.value = responseList(res.data);
   } finally {
     customerLoading.value = false;
   }
@@ -171,7 +173,7 @@ async function searchProduct(keyword?: string) {
     const res = await api.get("/product/search", {
       params: { keyword: keyword || undefined, pageSize: 200 }
     });
-    productOptions.value = res.data || [];
+    productOptions.value = responseList(res.data);
   } finally {
     productLoading.value = false;
   }
@@ -183,7 +185,7 @@ async function searchVehicle(keyword?: string) {
     const res = await api.get("/vehicle/search", {
       params: { keyword: keyword || undefined, pageSize: 200 }
     });
-    vehicleOptions.value = res.data || [];
+    vehicleOptions.value = responseList(res.data);
   } finally {
     vehicleLoading.value = false;
   }
@@ -369,16 +371,15 @@ async function loadData() {
 }
 
 async function loadWarehouses() {
-  const res = await api.get("/warehouse/list", {
-    params: { pageSize: 500, enabled: 1 }
+  warehouses.value = await fetchAllListPages("/warehouse/list", {
+    enabled: 1
   });
-  warehouses.value = res.data.list || [];
 }
 
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/outbound_type");
-    billTypeOptions.value = (res.data || []).map((d: any) => ({
+    billTypeOptions.value = responseList(res.data).map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
     }));

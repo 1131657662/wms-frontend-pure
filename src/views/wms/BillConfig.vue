@@ -28,13 +28,19 @@ const headerCellStyle = {
 const stats = computed(() => ({
   total: list.value.length,
   enabled: list.value.filter((item: any) => item.is_enabled).length,
-  dateSeq: list.value.filter((item: any) => item.serial_rule === "date_seq").length
+  dateSeq: list.value.filter((item: any) => item.serial_rule === "date_seq")
+    .length
 }));
 
 // ==================== 列定义 ====================
 const columns: any[] = [
   { type: "index", label: "#", width: 56 },
-  { label: "类型编码", prop: "bill_type_code", width: 150, showOverflowTooltip: true },
+  {
+    label: "类型编码",
+    prop: "bill_type_code",
+    width: 150,
+    showOverflowTooltip: true
+  },
   { label: "类型名称", prop: "bill_type_name", width: 130 },
   { label: "前缀", prop: "prefix", width: 100 },
   { label: "规则", slot: "serial_rule", width: 100, align: "center" },
@@ -46,8 +52,11 @@ const columns: any[] = [
 
 async function loadData() {
   loading.value = true;
-  try { list.value = (await api.get("/sys/bill-config/list")).data; }
-  finally { loading.value = false; }
+  try {
+    list.value = (await api.get("/sys/bill-config/list")).data?.list ?? [];
+  } finally {
+    loading.value = false;
+  }
 }
 
 function openDialog(row: any) {
@@ -69,7 +78,9 @@ async function handleSave() {
     loadData();
   } catch (err: any) {
     ElMessage.error(err.response?.data?.message || "保存失败");
-  } finally { saving.value = false; }
+  } finally {
+    saving.value = false;
+  }
 }
 
 onMounted(loadData);
@@ -81,83 +92,165 @@ onMounted(loadData);
     <div class="flex gap-4 mb-4">
       <div
         v-for="card in [
-          { label: '配置项', value: stats.total, color: 'var(--el-color-primary)', icon: Document },
-          { label: '已启用', value: stats.enabled, color: '#67c23a', icon: CheckLine },
-          { label: '日期序列', value: stats.dateSeq, color: 'var(--el-color-info)', icon: Settings }
+          {
+            label: '配置项',
+            value: stats.total,
+            color: 'var(--el-color-primary)',
+            icon: Document
+          },
+          {
+            label: '已启用',
+            value: stats.enabled,
+            color: '#67c23a',
+            icon: CheckLine
+          },
+          {
+            label: '日期序列',
+            value: stats.dateSeq,
+            color: 'var(--el-color-info)',
+            icon: Settings
+          }
         ]"
         :key="card.label"
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
         <div
-          class="flex items-center justify-center rounded-lg"
-          :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }"
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
         >
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ==================== 表格 ==================== -->
-    <PureTableBar title="单据编号配置" :columns="columns" storage-key="BillConfig" @refresh="loadData">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="单据编号配置"
+      :columns="columns"
+      storage-key="BillConfig"
+      @refresh="loadData"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           :loading="loading"
           :size="size"
           :data="list"
           :columns="dynamicColumns"
           :header-cell-style="headerCellStyle"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
         >
           <template #empty>
             <EmptyState title="暂无单据编号配置" />
           </template>
           <template #serial_rule="{ row }">
-            <el-tag size="small" effect="plain" :type="row.serial_rule === 'date_seq' ? 'primary' : 'info'">
+            <el-tag
+              size="small"
+              effect="plain"
+              :type="row.serial_rule === 'date_seq' ? 'primary' : 'info'"
+            >
               {{ row.serial_rule === "date_seq" ? "日期序列" : "纯序列" }}
             </el-tag>
           </template>
           <template #is_enabled="{ row }">
             <span class="inline-flex items-center gap-1.5">
-              <span class="status-dot" :class="row.is_enabled ? 'dot-success' : 'dot-unknown'" />
-              <span class="text-xs" :style="{ color: row.is_enabled ? '#67c23a' : '#909399' }">{{ row.is_enabled ? "是" : "否" }}</span>
+              <span
+                class="status-dot"
+                :class="row.is_enabled ? 'dot-success' : 'dot-unknown'"
+              />
+              <span
+                class="text-xs"
+                :style="{ color: row.is_enabled ? '#67c23a' : '#909399' }"
+                >{{ row.is_enabled ? "是" : "否" }}</span
+              >
             </span>
           </template>
           <template #operation="{ row }">
-            <el-button link type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+            <el-button link type="primary" size="small" @click="openDialog(row)"
+              >编辑</el-button
+            >
           </template>
         </pure-table>
       </template>
     </PureTableBar>
 
     <!-- ==================== 编辑弹窗 ==================== -->
-    <el-dialog v-model="dialogVisible" title="编辑单据配置" width="400px" destroy-on-close :close-on-click-modal="false">
+    <el-dialog
+      v-model="dialogVisible"
+      title="编辑单据配置"
+      width="400px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
       <el-form :model="form" label-width="100px">
-        <el-form-item label="类型编码"><el-input :model-value="form.bill_type_code" disabled /></el-form-item>
-        <el-form-item label="类型名称"><el-input :model-value="form.bill_type_name" disabled /></el-form-item>
+        <el-form-item label="类型编码"
+          ><el-input :model-value="form.bill_type_code" disabled
+        /></el-form-item>
+        <el-form-item label="类型名称"
+          ><el-input :model-value="form.bill_type_name" disabled
+        /></el-form-item>
         <el-form-item label="规则">
-          <el-input :model-value="form.serial_rule === 'date_seq' ? '日期序列' : '纯序列'" disabled />
+          <el-input
+            :model-value="
+              form.serial_rule === 'date_seq' ? '日期序列' : '纯序列'
+            "
+            disabled
+          />
         </el-form-item>
-        <el-form-item label="前缀"><el-input v-model="form.prefix" /></el-form-item>
-        <el-form-item label="序号位数"><el-input-number v-model="form.serial_digits" :min="1" :max="10" /></el-form-item>
-        <el-form-item label="起始值"><el-input-number v-model="form.serial_start" :min="1" /></el-form-item>
+        <el-form-item label="前缀"
+          ><el-input v-model="form.prefix"
+        /></el-form-item>
+        <el-form-item label="序号位数"
+          ><el-input-number v-model="form.serial_digits" :min="1" :max="10"
+        /></el-form-item>
+        <el-form-item label="起始值"
+          ><el-input-number v-model="form.serial_start" :min="1"
+        /></el-form-item>
         <el-form-item label="启用">
-          <el-switch v-model="form.is_enabled" :active-value="1" :inactive-value="0" />
+          <el-switch
+            v-model="form.is_enabled"
+            :active-value="1"
+            :inactive-value="0"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave"
+          >保存</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -166,18 +259,25 @@ onMounted(loadData);
 <style scoped>
 .status-dot {
   display: inline-block;
+  flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  flex-shrink: 0;
 }
-.dot-success { background: #67c23a; }
-.dot-unknown { background: #c0c4cc; }
+
+.dot-success {
+  background: #67c23a;
+}
+
+.dot-unknown {
+  background: #c0c4cc;
+}
 
 :deep(.el-table__body-wrapper .el-table__cell) {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

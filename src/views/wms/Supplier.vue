@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -32,9 +33,24 @@ const supplierLevelOptions = ref<any[]>([]);
 const cooperationStatusOptions = ref<any[]>([]);
 
 const statsCards = computed(() => [
-  { label: "供应商总数", value: pagination.total, color: "var(--el-color-primary)", icon: TruckLine },
-  { label: "启用", value: dataList.value.filter((item: any) => item.is_enabled === 1).length, color: "#67c23a", icon: CheckboxCircleLine },
-  { label: "本页", value: dataList.value.length, color: "var(--el-color-info)", icon: User }
+  {
+    label: "供应商总数",
+    value: pagination.total,
+    color: "var(--el-color-primary)",
+    icon: TruckLine
+  },
+  {
+    label: "启用",
+    value: dataList.value.filter((item: any) => item.is_enabled === 1).length,
+    color: "#67c23a",
+    icon: CheckboxCircleLine
+  },
+  {
+    label: "本页",
+    value: dataList.value.length,
+    color: "var(--el-color-info)",
+    icon: User
+  }
 ]);
 
 const columns: any[] = [
@@ -116,7 +132,7 @@ const resetForm = () => {
   fetchData();
 };
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-Supplier", String(v));
+  localStorage.setItem("page-size-Supplier", String(v));
   pagination.pageSize = v;
   fetchData();
 };
@@ -211,17 +227,24 @@ async function loadDict() {
       api.get("/sys/dict/data/supplier_level"),
       api.get("/sys/dict/data/cooperation_status")
     ]);
-    const stypes = (types.data || []);
-    supplierTypeOptions.value = stypes.map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
-    for (const d of stypes) { supplierTypeMap[d.dict_value] = d.dict_label; }
-    supplierLevelOptions.value = (levels.data || []).map((d: any) => ({
+    const stypes = responseList(types.data);
+    supplierTypeOptions.value = stypes.map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
     }));
-    cooperationStatusOptions.value = (statuses.data || []).map((d: any) => ({
+    for (const d of stypes) {
+      supplierTypeMap[d.dict_value] = d.dict_label;
+    }
+    supplierLevelOptions.value = responseList(levels.data).map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
     }));
+    cooperationStatusOptions.value = responseList(statuses.data).map(
+      (d: any) => ({
+        label: d.dict_label,
+        value: d.dict_value
+      })
+    );
   } catch {
     /* empty */
   }
@@ -243,21 +266,38 @@ onMounted(() => {
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 筛选条件卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -310,21 +350,31 @@ onMounted(() => {
     </div>
 
     <!-- 表格卡片 -->
-    <PureTableBar title="供应商管理" :columns="columns" storage-key="Supplier" @refresh="onSearch">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="供应商管理"
+      :columns="columns"
+      storage-key="Supplier"
+      @refresh="onSearch"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -336,7 +386,10 @@ onMounted(() => {
           @page-current-change="handleCurrentChange"
         >
           <template #empty>
-            <EmptyState title="暂无供应商数据" description="调整筛选条件或点击新增" />
+            <EmptyState
+              title="暂无供应商数据"
+              description="调整筛选条件或点击新增"
+            />
           </template>
           <template #supplier_type="{ row }">
             <el-tag
@@ -344,7 +397,9 @@ onMounted(() => {
               effect="plain"
               type="info"
               size="small"
-              >{{ supplierTypeMap[row.supplier_type] || row.supplier_type }}</el-tag
+              >{{
+                supplierTypeMap[row.supplier_type] || row.supplier_type
+              }}</el-tag
             >
             <span v-else>-</span>
           </template>
@@ -535,6 +590,7 @@ onMounted(() => {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

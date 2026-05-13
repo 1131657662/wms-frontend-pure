@@ -5,6 +5,8 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList } from "@/utils/responseList";
 import { hasPerms } from "@/utils/auth";
 
 import AddFill from "~icons/ri/add-circle-line";
@@ -60,7 +62,7 @@ const alertOptions = ref<{ label: string; value: string }[]>([]);
 async function loadAlertDict() {
   try {
     const res = await api.get("/sys/dict/data/stock_alert_level");
-    const list = res.data || [];
+    const list = responseList(res.data);
     alertOptions.value = list.map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
@@ -184,7 +186,7 @@ function scrollWh(dir: number) {
 async function fetchWarehouseSummary() {
   try {
     const res = await api.get("/stock/warehouse-summary");
-    warehouseSummary.value = res.data || [];
+    warehouseSummary.value = responseList(res.data);
     nextTick(() => updateScrollState());
   } catch {
     /* ignore */
@@ -207,12 +209,9 @@ const handleCurrentChange = (v: number) => {
 
 async function loadWarehouses() {
   try {
-    warehouses.value =
-      (
-        await api.get("/warehouse/list", {
-          params: { pageSize: 500, enabled: 1 }
-        })
-      ).data.list || [];
+    warehouses.value = await fetchAllListPages("/warehouse/list", {
+      enabled: 1
+    });
   } catch {
     /* empty */
   }
@@ -237,7 +236,7 @@ async function searchProduct(keyword?: string) {
     const res = await api.get("/product/search", {
       params: { keyword: keyword || undefined, pageSize: 200 }
     });
-    const data = res.data || [];
+    const data = responseList(res.data);
     productOptions.value = data;
     productNameOptions.value = [
       ...new Map(data.map((p: any) => [p.product_name, p])).values()

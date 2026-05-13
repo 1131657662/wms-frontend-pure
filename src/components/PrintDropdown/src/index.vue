@@ -27,7 +27,7 @@ onMounted(async () => {
   if (!props.pageCode) return;
   try {
     const res = await api.get(`/print/template/by-page/${props.pageCode}`);
-    templates.value = res.data || [];
+    templates.value = res.data?.list ?? res.data ?? [];
   } catch {
     /* 获取模板列表失败，下拉为空 */
   }

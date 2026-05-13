@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -198,7 +199,7 @@ async function handleDelete(row: any) {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/customer_level");
-    customerLevelOptions.value = (res.data || []).map((d: any) => ({
+    customerLevelOptions.value = responseList(res.data).map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
     }));
@@ -381,10 +382,6 @@ onMounted(() => {
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
-          @header-dragend="
-            (newWidth, _oldWidth, col) =>
-              onColumnResize(col.label || col.property, newWidth)
-          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -392,6 +389,10 @@ onMounted(() => {
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >

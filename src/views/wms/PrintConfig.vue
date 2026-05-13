@@ -92,7 +92,7 @@ const columns: any[] = [
 async function loadData() {
   loading.value = true;
   try {
-    list.value = (await api.get("/print/template/list")).data;
+    list.value = (await api.get("/print/template/list")).data?.list ?? [];
   } finally {
     loading.value = false;
   }

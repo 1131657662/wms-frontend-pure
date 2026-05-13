@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 import { formatOrderStatus } from "@/utils/format";
 import { hasPerms } from "@/utils/auth";
 import PrintDropdown from "@/components/PrintDropdown";
@@ -18,7 +19,7 @@ const billTypeMap = reactive<Record<string, string>>({});
 async function loadBillTypeDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    for (const d of res.data || []) {
+    for (const d of responseList(res.data)) {
       billTypeMap[d.dict_value] = d.dict_label;
     }
   } catch {

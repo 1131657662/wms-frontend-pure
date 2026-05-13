@@ -11,70 +11,118 @@
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="编码">
-            <span class="code-text">{{ form.supplier_code || '系统自动生成' }}</span>
+            <span class="code-text">{{
+              form.supplier_code || "系统自动生成"
+            }}</span>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="名称" prop="supplier_name">
-            <el-input v-model="form.supplier_name" placeholder="请输入供应商名称" />
+            <el-input
+              v-model="form.supplier_name"
+              placeholder="请输入供应商名称"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="简称">
-            <el-input v-model="form.supplier_short" placeholder="请输入供应商简称" />
+            <el-input
+              v-model="form.supplier_short"
+              placeholder="请输入供应商简称"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="联系人">
-            <el-input v-model="form.contact_person" placeholder="请输入联系人" />
+            <el-input
+              v-model="form.contact_person"
+              placeholder="请输入联系人"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="电话">
-            <el-input v-model="form.contact_phone" placeholder="请输入联系电话" />
+            <el-input
+              v-model="form.contact_phone"
+              placeholder="请输入联系电话"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="邮箱">
-            <el-input v-model="form.contact_email" placeholder="请输入联系邮箱" />
+            <el-input
+              v-model="form.contact_email"
+              placeholder="请输入联系邮箱"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="类型">
-            <el-select v-model="form.supplier_type" clearable placeholder="请选择类型" class="w-full!">
-              <el-option v-for="o in supplierTypeOptions" :key="o.value" :label="o.label" :value="o.value" />
+            <el-select
+              v-model="form.supplier_type"
+              clearable
+              placeholder="请选择类型"
+              class="w-full!"
+            >
+              <el-option
+                v-for="o in supplierTypeOptions"
+                :key="o.value"
+                :label="o.label"
+                :value="o.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="等级">
             <el-select v-model="form.level" class="w-full!">
-              <el-option v-for="o in supplierLevelOptions" :key="o.value" :label="o.label" :value="o.value" />
+              <el-option
+                v-for="o in supplierLevelOptions"
+                :key="o.value"
+                :label="o.label"
+                :value="o.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="合作状态">
             <el-select v-model="form.cooperation_status" class="w-full!">
-              <el-option v-for="o in cooperationStatusOptions" :key="o.value" :label="o.label" :value="o.value" />
+              <el-option
+                v-for="o in cooperationStatusOptions"
+                :key="o.value"
+                :label="o.label"
+                :value="o.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="启用">
-            <el-switch v-model="form.is_enabled" :active-value="1" :inactive-value="0" />
+            <el-switch
+              v-model="form.is_enabled"
+              :active-value="1"
+              :inactive-value="0"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="24">
           <el-form-item label="备注">
-            <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注信息" />
+            <el-input
+              v-model="form.remark"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入备注信息"
+            />
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
     <template #footer>
       <el-button @click="$emit('update:modelValue', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave">确定</el-button>
+      <el-button type="primary" :loading="saving" @click="handleSave"
+        >确定</el-button
+      >
     </template>
   </el-dialog>
 </template>
@@ -83,9 +131,13 @@
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 defineProps<{ modelValue: boolean }>();
-const emit = defineEmits<{ (e: "update:modelValue", v: boolean): void; (e: "saved", record: any): void }>();
+const emit = defineEmits<{
+  (e: "update:modelValue", v: boolean): void;
+  (e: "saved", record: any): void;
+}>();
 
 const saving = ref(false);
 const formRef = ref();
@@ -103,7 +155,9 @@ const form = reactive({
   remark: ""
 });
 const formRules = {
-  supplier_name: [{ required: true, message: "请输入供应商名称", trigger: "blur" }]
+  supplier_name: [
+    { required: true, message: "请输入供应商名称", trigger: "blur" }
+  ]
 };
 
 const supplierTypeOptions = ref<any[]>([]);
@@ -117,10 +171,20 @@ onMounted(async () => {
       api.get("/sys/dict/data/supplier_level"),
       api.get("/sys/dict/data/cooperation_status")
     ]);
-    supplierTypeOptions.value = (types.data || []).map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
-    supplierLevelOptions.value = (levels.data || []).map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
-    cooperationStatusOptions.value = (statuses.data || []).map((d: any) => ({ label: d.dict_label, value: d.dict_value }));
-  } catch { /* empty */ }
+    supplierTypeOptions.value = responseList(types.data).map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+    supplierLevelOptions.value = responseList(levels.data).map((d: any) => ({
+      label: d.dict_label,
+      value: d.dict_value
+    }));
+    cooperationStatusOptions.value = responseList(statuses.data).map(
+      (d: any) => ({ label: d.dict_label, value: d.dict_value })
+    );
+  } catch {
+    /* empty */
+  }
 });
 
 async function handleSave() {
@@ -145,8 +209,9 @@ async function handleSave() {
 .el-form-item {
   margin-bottom: 22px;
 }
+
 .code-text {
-  color: var(--el-text-color-secondary);
   font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 </style>

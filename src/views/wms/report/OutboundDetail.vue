@@ -5,6 +5,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList } from "@/utils/responseList";
 import {
   formatDate,
   formatOrderStatus,
@@ -90,7 +91,7 @@ async function searchProducts(q: string) {
   const res = await api.get("/product/search", {
     params: { keyword: q, pageSize: 200 }
   });
-  productOptions.value = (res.data || []).map((p: any) => ({
+  productOptions.value = responseList(res.data).map((p: any) => ({
     label: `${p.product_code} / ${p.product_name}`,
     value: p.product_code,
     name: p.product_name,
@@ -105,7 +106,7 @@ async function searchVehicles(q: string) {
   const res = await api.get("/vehicle/search", {
     params: { keyword: q, pageSize: 200 }
   });
-  vehicleOptions.value = (res.data || []).map((v: any) => ({
+  vehicleOptions.value = responseList(res.data).map((v: any) => ({
     label: v.plate_number,
     value: v.plate_number
   }));
@@ -536,7 +537,7 @@ async function exportData() {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/outbound_type");
-    const blist = res.data || [];
+    const blist = responseList(res.data);
     billTypeOptions.value = blist.map((d: any) => ({
       label: d.dict_label,
       value: d.dict_value
