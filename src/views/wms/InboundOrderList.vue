@@ -11,8 +11,16 @@ import { hasPerms } from "@/utils/auth";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
-import { fetchAllListPages } from "@/utils/fetchAllListPages";
-import { responseList } from "@/utils/responseList";
+import {
+  fetchAllListPages,
+  EXPORT_PAGE_CHUNK
+} from "@/utils/fetchAllListPages";
+import {
+  dictDataToOptions,
+  responseDictList,
+  responseList,
+  responseTotal
+} from "@/utils/responseList";
 import * as XLSX from "xlsx";
 
 import AddFill from "~icons/ri/add-circle-line";
@@ -165,8 +173,8 @@ async function fetchData() {
     if (filters.totalWeight_max != null)
       params.totalWeight_max = filters.totalWeight_max;
     const res = await api.get("/inbound/order/list", { params });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
     selectedRows.value = [];
   } finally {
     loading.value = false;
@@ -478,7 +486,8 @@ function exportToExcel(rows: any[], filename: string) {
 async function fetchAllData(params: Record<string, any>) {
   return fetchAllListPages(
     "/inbound/order/list",
-    params as Record<string, unknown>
+    params as Record<string, unknown>,
+    EXPORT_PAGE_CHUNK
   );
 }
 
@@ -551,12 +560,10 @@ function formatTime(t: string) {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    const list = responseList(res.data);
-    billTypeOptions.value = list.map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const list = responseDictList(res.data);
+    billTypeOptions.value = dictDataToOptions(list);
     for (const d of list) {
+      if (!d.dict_value) continue;
       billTypeMap[d.dict_value] = d.dict_label;
     }
   } catch {

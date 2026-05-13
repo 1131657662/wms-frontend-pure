@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import Printer from "~icons/ep/printer";
 import ArrowDown from "~icons/ep/arrow-down";
@@ -27,7 +28,7 @@ onMounted(async () => {
   if (!props.pageCode) return;
   try {
     const res = await api.get(`/print/template/by-page/${props.pageCode}`);
-    templates.value = res.data?.list ?? res.data ?? [];
+    templates.value = responseList(res.data);
   } catch {
     /* 获取模板列表失败，下拉为空 */
   }

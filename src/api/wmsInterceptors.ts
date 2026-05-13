@@ -20,9 +20,12 @@ export function applyWmsApiInterceptors(api: AxiosInstance): void {
   api.interceptors.response.use(
     response => response.data,
     error => {
-      const msg = parseBackendErrorMessage(error);
-      message(msg, { type: "error" });
-      if (error.response?.status === 401 && !wms401Handling) {
+      const status = error.response?.status;
+      if (status !== 401) {
+        const msg = parseBackendErrorMessage(error);
+        message(msg, { type: "error" });
+      }
+      if (status === 401 && !wms401Handling) {
         wms401Handling = true;
         void import("@/store/modules/user")
           .then(({ useUserStoreHook }) => {

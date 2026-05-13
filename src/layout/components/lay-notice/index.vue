@@ -6,6 +6,7 @@ import { ElMessage } from "element-plus";
 import { noticesData } from "./data";
 import NoticeList from "./components/NoticeList.vue";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import BellIcon from "~icons/lucide/bell";
 import ArrowRightIcon from "~icons/ri/arrow-right-s-line";
@@ -20,31 +21,47 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 function formatTime(v: string) {
   if (!v) return "";
-  return new Date(v).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(v)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 async function fetchNotices() {
   try {
     const res = await api.get("/message/list", { params: { pageSize: 5 } });
-    const list = (res.data?.list || []).map((m: any) => ({
+    const list = responseList(res.data).map((m: any) => ({
       avatar: m.avatar || "",
       title: m.title || m.type || "消息",
       datetime: formatTime(m.create_time),
       type: String(m.id || ""),
       description: m.content || m.message || "",
-      status: m.is_read ? "info" as const : ("primary" as const),
-      msgType: m.type  // 保留原始消息类型用于分流
+      status: m.is_read ? ("info" as const) : ("primary" as const),
+      msgType: m.type // 保留原始消息类型用于分流
     }));
     // 通知 tab：公告 + 预警类
-    const notifyTypes = ["announcement", "alert_low", "alert_high", "alert_normal"];
-    notices.value[0].list = list.filter((m: any) => notifyTypes.includes(m.msgType)).slice(0, 5);
+    const notifyTypes = [
+      "announcement",
+      "alert_low",
+      "alert_high",
+      "alert_normal"
+    ];
+    notices.value[0].list = list
+      .filter((m: any) => notifyTypes.includes(m.msgType))
+      .slice(0, 5);
     // 消息 tab：订单流程类（待审核 / 审核通过）
     const msgTypes = ["order_submit", "order_audit"];
-    notices.value[1].list = list.filter((m: any) => msgTypes.includes(m.msgType)).slice(0, 5);
+    notices.value[1].list = list
+      .filter((m: any) => msgTypes.includes(m.msgType))
+      .slice(0, 5);
   } catch {
     /* 静默失败 */
   }
@@ -61,17 +78,18 @@ onBeforeUnmount(() => {
   window.removeEventListener("unread-count-change", fetchNotices);
 });
 
-const unreadCount = (tab: any) => tab.list.filter((m: any) => m.status === "primary").length;
-const getLabel = computed(
-  () => item => {
-    const n = unreadCount(item);
-    return t(item.name) + (n > 0 ? `(${n})` : "");
-  }
-);
+const unreadCount = (tab: any) =>
+  tab.list.filter((m: any) => m.status === "primary").length;
+const getLabel = computed(() => item => {
+  const n = unreadCount(item);
+  return t(item.name) + (n > 0 ? `(${n})` : "");
+});
 
 const hasUnread = computed(() => {
-  return notices.value.some(tab =>
-    Array.isArray(tab.list) && tab.list.some((m: any) => m.status === "primary")
+  return notices.value.some(
+    tab =>
+      Array.isArray(tab.list) &&
+      tab.list.some((m: any) => m.status === "primary")
   );
 });
 
@@ -97,7 +115,12 @@ const onMarkAsRead = async () => {
 </script>
 
 <template>
-  <el-dropdown ref="dropdownRef" trigger="click" placement="bottom-end" popper-class="is-pure-notice">
+  <el-dropdown
+    ref="dropdownRef"
+    trigger="click"
+    placement="bottom-end"
+    popper-class="is-pure-notice"
+  >
     <span
       :class="['dropdown-badge', 'navbar-bg-hover', 'select-none', 'mr-1.75']"
     >
@@ -220,8 +243,8 @@ const onMarkAsRead = async () => {
 
 <style>
 .el-dropdown__popper.is-pure-notice {
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: var(--el-border-radius-base);
   box-shadow: var(--el-box-shadow);
-  border: 1px solid var(--el-border-color-lighter);
 }
 </style>

@@ -5,7 +5,7 @@ import { ElMessage } from "element-plus";
 import { QuickAddSelect } from "@/components/QuickAddSelect";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
-import { responseList } from "@/utils/responseList";
+import { responseDictOptions, responseList } from "@/utils/responseList";
 import { useElTableColumnWidths } from "@/composables/useElTableColumnWidths";
 
 defineOptions({ name: "InboundOrderForm" });
@@ -126,7 +126,7 @@ async function searchSupplier(keyword?: string) {
         enabled: 1
       }
     });
-    supplierOptions.value = res.data.list || [];
+    supplierOptions.value = responseList(res.data);
   } finally {
     supplierLoading.value = false;
   }
@@ -304,10 +304,7 @@ async function loadWarehouses() {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/inbound_type");
-    billTypeOptions.value = responseList(res.data).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    billTypeOptions.value = responseDictOptions(res.data);
   } catch {
     /* 字典加载失败使用空数组 */
   }

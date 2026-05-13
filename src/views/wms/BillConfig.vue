@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import Document from "~icons/ri/file-text-line";
 import CheckLine from "~icons/ri/checkbox-circle-line";
@@ -53,7 +54,8 @@ const columns: any[] = [
 async function loadData() {
   loading.value = true;
   try {
-    list.value = (await api.get("/sys/bill-config/list")).data?.list ?? [];
+    const r = await api.get("/sys/bill-config/list");
+    list.value = responseList(r.data);
   } finally {
     loading.value = false;
   }

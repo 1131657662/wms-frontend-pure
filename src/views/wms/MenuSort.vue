@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import draggable from "vuedraggable/src/vuedraggable";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import {
   saveMenuOrderToStorage,
@@ -93,7 +94,7 @@ async function fetchData() {
   errorMsg.value = "";
   try {
     const res = await api.get("/system/menu/list");
-    const rows = res.data?.list ?? res.data ?? [];
+    const rows = responseList(res.data);
     const tops = rows
       .filter((r: any) => !r.parent_code)
       .sort((a: any, b: any) => a.sort_order - b.sort_order);

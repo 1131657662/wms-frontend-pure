@@ -5,7 +5,12 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { hasPerms } from "@/utils/auth";
-import { responseList } from "@/utils/responseList";
+import {
+  dictDataToOptions,
+  responseDictList,
+  responseList,
+  responseTotal
+} from "@/utils/responseList";
 import { MESSAGE_TYPE_MAP, MESSAGE_TYPE_TAG } from "@/utils/format";
 
 import Message from "~icons/ri/message-2-line";
@@ -21,17 +26,38 @@ const typeMap = reactive<Record<string, string>>({});
 const typeTagMap = reactive<Record<string, string>>({});
 const typeOptions = ref<{ label: string; value: string }[]>([]);
 
+type ElTagType = "primary" | "success" | "warning" | "danger" | "info";
+
+function coerceElTagType(v: string | undefined): ElTagType {
+  const s = (v || "info").trim();
+  if (
+    s === "primary" ||
+    s === "success" ||
+    s === "warning" ||
+    s === "danger" ||
+    s === "info"
+  ) {
+    return s;
+  }
+  return "info";
+}
+
+function messageRowTagType(msgType: string | undefined): ElTagType {
+  if (!msgType) return "info";
+  return coerceElTagType(
+    typeTagMap[msgType] || MESSAGE_TYPE_TAG[msgType] || "info"
+  );
+}
+
 async function loadTypeDict() {
   try {
     const res = await api.get("/sys/dict/data/message_type");
-    const list = responseList(res.data);
-    typeOptions.value = list.map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const list = responseDictList(res.data);
+    typeOptions.value = dictDataToOptions(list);
     for (const d of list) {
+      if (!d.dict_value) continue;
       typeMap[d.dict_value] = d.dict_label;
-      typeTagMap[d.dict_value] = d.remark || "info";
+      typeTagMap[d.dict_value] = coerceElTagType(d.remark);
     }
   } catch {
     /* 字典加载失败 */
@@ -110,8 +136,8 @@ async function fetchData() {
     if (filterRead.value !== "" && filterRead.value !== null)
       params.is_read = filterRead.value;
     const res = await api.get("/message/list", { params });
-    list.value = res.data.list;
-    pagination.total = res.data.total;
+    list.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -409,9 +435,7 @@ onMounted(() => {
             <el-tag
               effect="plain"
               size="small"
-              :type="
-                typeTagMap[row.type] || MESSAGE_TYPE_TAG[row.type] || 'info'
-              "
+              :type="messageRowTagType(row.type)"
               >{{
                 typeMap[row.type] || MESSAGE_TYPE_MAP[row.type] || row.type
               }}</el-tag

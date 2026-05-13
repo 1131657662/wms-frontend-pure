@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList, responseTotal } from "@/utils/responseList";
 
 import Search from "~icons/ri/search-line";
 import User from "~icons/ri/user-line";
@@ -42,22 +43,30 @@ const stats = computed(() => {
   return {
     total: pagination.total,
     activeNow: active1m,
-    lastLogin: dataList.value
-      .map((u: any) => u.login_time)
-      .filter(Boolean)
-      .sort()
-      .reverse()[0] || null
+    lastLogin:
+      dataList.value
+        .map((u: any) => u.login_time)
+        .filter(Boolean)
+        .sort()
+        .reverse()[0] || null
   };
 });
 
 // ==================== 时间 ====================
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 function relativeTime(t: string) {
@@ -75,7 +84,13 @@ function relativeTime(t: string) {
 
 // ==================== 列定义 ====================
 const columns: any[] = [
-  { type: "index", label: "#", width: 56, index: (i: number) => (pagination.currentPage - 1) * pagination.pageSize + i + 1 },
+  {
+    type: "index",
+    label: "#",
+    width: 56,
+    index: (i: number) =>
+      (pagination.currentPage - 1) * pagination.pageSize + i + 1
+  },
   { label: "用户名", prop: "username", width: 130 },
   { label: "昵称", prop: "nickname", width: 130 },
   { label: "状态", slot: "online_status", width: 85, align: "center" },
@@ -89,19 +104,36 @@ const columns: any[] = [
 async function fetchData() {
   loading.value = true;
   try {
-    const params: any = { page: pagination.currentPage, pageSize: pagination.pageSize };
+    const params: any = {
+      page: pagination.currentPage,
+      pageSize: pagination.pageSize
+    };
     if (filterUsername.value) params.username = filterUsername.value;
     const res = await api.get("/sys/online/list", { params });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
-  } finally { loading.value = false; }
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
+  } finally {
+    loading.value = false;
+  }
 }
 
-const handleSearch = () => { pagination.currentPage = 1; fetchData(); };
-const handleReset = () => { filterUsername.value = ""; handleSearch(); };
+const handleSearch = () => {
+  pagination.currentPage = 1;
+  fetchData();
+};
+const handleReset = () => {
+  filterUsername.value = "";
+  handleSearch();
+};
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-OnlineUser", String(v)); pagination.pageSize = v; fetchData(); };
-const handleCurrentChange = (v: number) => { pagination.currentPage = v; fetchData(); };
+  localStorage.setItem("page-size-OnlineUser", String(v));
+  pagination.pageSize = v;
+  fetchData();
+};
+const handleCurrentChange = (v: number) => {
+  pagination.currentPage = v;
+  fetchData();
+};
 
 async function handleKick(row: any) {
   try {
@@ -110,7 +142,9 @@ async function handleKick(row: any) {
       "强制下线",
       { type: "warning", confirmButtonText: "确认下线" }
     );
-  } catch { return; }
+  } catch {
+    return;
+  }
 
   kicking.value = row.user_id;
   try {
@@ -119,7 +153,9 @@ async function handleKick(row: any) {
     fetchData();
   } catch (e: any) {
     ElMessage.error(e.response?.data?.message || "操作失败");
-  } finally { kicking.value = null; }
+  } finally {
+    kicking.value = null;
+  }
 }
 
 onMounted(fetchData);
@@ -131,31 +167,61 @@ onMounted(fetchData);
     <div class="flex gap-4 mb-4">
       <div
         v-for="card in [
-          { label: '当前在线', value: stats.total, color: '#67c23a', icon: User },
-          { label: '活跃用户', value: stats.activeNow, color: 'var(--el-color-primary)', icon: Computer },
-          { label: '最近登录', value: stats.lastLogin ? relativeTime(stats.lastLogin) : '—', color: 'var(--el-color-info)', icon: Timer }
+          {
+            label: '当前在线',
+            value: stats.total,
+            color: '#67c23a',
+            icon: User
+          },
+          {
+            label: '活跃用户',
+            value: stats.activeNow,
+            color: 'var(--el-color-primary)',
+            icon: Computer
+          },
+          {
+            label: '最近登录',
+            value: stats.lastLogin ? relativeTime(stats.lastLogin) : '—',
+            color: 'var(--el-color-info)',
+            icon: Timer
+          }
         ]"
         :key="card.label"
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
         <div
-          class="flex items-center justify-center rounded-lg"
-          :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }"
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
         >
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ==================== 搜索卡片 ==================== -->
-    <div
-      class="wms-card mb-4"
-    >
+    <div class="wms-card mb-4">
       <!-- 搜索栏 -->
       <div :style="{ padding: '16px 20px' }">
         <div class="flex items-center gap-3 flex-wrap">
@@ -168,7 +234,13 @@ onMounted(fetchData);
             @clear="handleSearch"
             @keyup.enter="handleSearch"
           />
-          <el-button type="primary" :icon="useRenderIcon(Search)" :loading="loading" @click="handleSearch">查询</el-button>
+          <el-button
+            type="primary"
+            :icon="useRenderIcon(Search)"
+            :loading="loading"
+            @click="handleSearch"
+            >查询</el-button
+          >
           <el-button @click="handleReset">重置</el-button>
         </div>
       </div>
@@ -176,61 +248,120 @@ onMounted(fetchData);
       <!-- 底部信息栏 -->
       <div
         class="flex items-center gap-2 flex-wrap"
-        :style="{ padding: '10px 20px', borderTop: '1px solid var(--el-border-color-lighter)' }"
+        :style="{
+          padding: '10px 20px',
+          borderTop: '1px solid var(--el-border-color-lighter)'
+        }"
       >
-        <el-alert type="info" :closable="false" show-icon class="flex-1!" style="padding: 6px 12px">
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          class="flex-1!"
+          style="padding: 6px 12px"
+        >
           <template #title>
-            <span class="text-xs">最近 5 分钟有操作的用户视为在线，活跃用户 = 最近 1 分钟内有操作</span>
+            <span class="text-xs"
+              >最近 5 分钟有操作的用户视为在线，活跃用户 = 最近 1
+              分钟内有操作</span
+            >
           </template>
         </el-alert>
-        <span class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">
-          共 <strong :style="{ color: 'var(--el-text-color-primary)' }">{{ pagination.total }}</strong> 人在线
+        <span
+          class="text-xs"
+          :style="{ color: 'var(--el-text-color-secondary)' }"
+        >
+          共
+          <strong :style="{ color: 'var(--el-text-color-primary)' }">{{
+            pagination.total
+          }}</strong>
+          人在线
         </span>
       </div>
     </div>
 
     <!-- ==================== 表格 ==================== -->
-    <PureTableBar title="在线用户" :columns="columns" storage-key="OnlineUser" @refresh="fetchData">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="在线用户"
+      :columns="columns"
+      storage-key="OnlineUser"
+      @refresh="fetchData"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="user_id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
           :header-cell-style="headerCellStyle"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >
           <template #empty>
-            <EmptyState title="暂无在线用户" description="用户登录并活跃后会自动出现在此列表中" />
+            <EmptyState
+              title="暂无在线用户"
+              description="用户登录并活跃后会自动出现在此列表中"
+            />
           </template>
 
           <template #online_status="{ row }">
             <span class="inline-flex items-center gap-1.5">
-              <span class="status-dot" :class="Date.now() - new Date(row.last_active_time).getTime() < 60_000 ? 'dot-active' : 'dot-idle'" />
-              <span class="text-xs" :style="{ color: Date.now() - new Date(row.last_active_time).getTime() < 60_000 ? '#67c23a' : '#e6a23c' }">
-                {{ Date.now() - new Date(row.last_active_time).getTime() < 60_000 ? '活跃' : '在线' }}
+              <span
+                class="status-dot"
+                :class="
+                  Date.now() - new Date(row.last_active_time).getTime() < 60_000
+                    ? 'dot-active'
+                    : 'dot-idle'
+                "
+              />
+              <span
+                class="text-xs"
+                :style="{
+                  color:
+                    Date.now() - new Date(row.last_active_time).getTime() <
+                    60_000
+                      ? '#67c23a'
+                      : '#e6a23c'
+                }"
+              >
+                {{
+                  Date.now() - new Date(row.last_active_time).getTime() < 60_000
+                    ? "活跃"
+                    : "在线"
+                }}
               </span>
             </span>
           </template>
 
           <template #login_time="{ row }">
             <el-tooltip :content="formatTime(row.login_time)" placement="top">
-              <span class="time-cell">{{ relativeTime(row.login_time) || formatTime(row.login_time) }}</span>
+              <span class="time-cell">{{
+                relativeTime(row.login_time) || formatTime(row.login_time)
+              }}</span>
             </el-tooltip>
           </template>
 
           <template #last_active_time="{ row }">
-            <el-tooltip :content="formatTime(row.last_active_time)" placement="top">
-              <span class="time-cell">{{ relativeTime(row.last_active_time) }}</span>
+            <el-tooltip
+              :content="formatTime(row.last_active_time)"
+              placement="top"
+            >
+              <span class="time-cell">{{
+                relativeTime(row.last_active_time)
+              }}</span>
             </el-tooltip>
           </template>
 
@@ -241,7 +372,8 @@ onMounted(fetchData);
               size="small"
               :loading="kicking === row.user_id"
               @click="handleKick(row)"
-            >强退</el-button>
+              >强退</el-button
+            >
           </template>
         </pure-table>
       </template>
@@ -255,25 +387,33 @@ onMounted(fetchData);
   flex: 1;
   min-width: 240px;
 }
+
 .search-input :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color))
+    inset;
 }
 
 /* 状态圆点 */
 .status-dot {
   display: inline-block;
+  flex-shrink: 0;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  flex-shrink: 0;
 }
-.dot-active { background: #67c23a; }
-.dot-idle { background: #e6a23c; }
+
+.dot-active {
+  background: #67c23a;
+}
+
+.dot-idle {
+  background: #e6a23c;
+}
 
 /* 时间列 */
 .time-cell {
-  cursor: default;
   font-variant-numeric: tabular-nums;
+  cursor: default;
   border-bottom: 1px dashed var(--el-text-color-disabled);
 }
 
@@ -282,6 +422,7 @@ onMounted(fetchData);
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

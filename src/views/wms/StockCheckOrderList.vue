@@ -6,6 +6,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList, responseTotal } from "@/utils/responseList";
 
 import AddFill from "~icons/ri/add-circle-line";
 import Search from "~icons/ri/search-line";
@@ -91,8 +92,8 @@ async function fetchData() {
     if (filters.warehouse_code) params.warehouse_code = filters.warehouse_code;
     if (filters.status) params.status = filters.status;
     const res = await api.get("/stock/check_order/list", { params });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
     selectedRows.value = [];
   } finally {
     loading.value = false;

@@ -5,6 +5,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList } from "@/utils/responseList";
 import Calendar from "~icons/ri/calendar-2-line";
 import OfficeBuilding from "~icons/ep/office-building";
 import Search from "~icons/ep/search";
@@ -129,7 +130,7 @@ async function fetchData() {
     };
     if (filter.warehouse_code) params.warehouse_code = filter.warehouse_code;
     const res = await api.get("/report/turnover", { params });
-    allData.value = res.data || [];
+    allData.value = responseList(res.data);
     pagination.currentPage = 1;
     applyPagination();
   } finally {
@@ -351,10 +352,6 @@ onMounted(fetchWarehouses);
           :size="size"
           :data="tableData"
           :columns="dynamicColumns"
-          @header-dragend="
-            (newWidth, _oldWidth, col) =>
-              onColumnResize(col.label || col.property, newWidth)
-          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -362,6 +359,10 @@ onMounted(fetchWarehouses);
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"
         >

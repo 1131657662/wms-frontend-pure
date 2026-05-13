@@ -1,18 +1,24 @@
 import api from "@/api/wms";
+import { responseList, responseTotal } from "@/utils/responseList";
 
-const DEFAULT_PAGE_SIZE = 5000;
+/** 下拉、全量主数据等：单页条数（减少浏览器一次解析过大 JSON） */
+export const LIST_PAGE_CHUNK_DEFAULT = 500;
+
+/** 浏览器端全量导出等：单页条数（与后端 API_MAX_PAGE_SIZE 兼容，由调用方显式传入） */
+export const EXPORT_PAGE_CHUNK = 5000;
+
 const MAX_PAGES = 500;
 
 type ListPayload = { list?: any[]; total?: number };
 
 /**
- * 分页拉取列表直到拿全（浏览器端导出、下拉全量主数据等场景）。
- * 依赖后端 `data.list` + `data.total`；单页条数默认 5000，与后端 API_MAX_PAGE_SIZE 默认兼容。
+ * 分页拉取列表直到拿全（下拉、导出等）。
+ * 默认 `pageSize` 为 {@link LIST_PAGE_CHUNK_DEFAULT}；导出请传入 {@link EXPORT_PAGE_CHUNK} 等。
  */
 export async function fetchAllListPages(
   url: string,
   baseParams: Record<string, unknown> = {},
-  pageSize = DEFAULT_PAGE_SIZE
+  pageSize = LIST_PAGE_CHUNK_DEFAULT
 ): Promise<any[]> {
   const all: any[] = [];
 
@@ -21,9 +27,9 @@ export async function fetchAllListPages(
       params: { ...baseParams, page, pageSize }
     });
     const data = res.data as ListPayload;
-    const chunk = data?.list ?? [];
+    const chunk = responseList(data);
     all.push(...chunk);
-    const total = Number(data?.total ?? 0);
+    const total = responseTotal(data);
     if (chunk.length === 0) break;
     if (total > 0 && all.length >= total) break;
     if (chunk.length < pageSize) break;

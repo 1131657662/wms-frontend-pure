@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import AddFill from "~icons/ri/add-circle-line";
 import Printer from "~icons/ri/printer-line";
@@ -92,7 +93,8 @@ const columns: any[] = [
 async function loadData() {
   loading.value = true;
   try {
-    list.value = (await api.get("/print/template/list")).data?.list ?? [];
+    const r = await api.get("/print/template/list");
+    list.value = responseList(r.data);
   } finally {
     loading.value = false;
   }

@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -39,9 +40,24 @@ function flattenTree(tree: any[], result: any[] = []): any[] {
 }
 
 const statsCards = computed(() => [
-  { label: "分类总数", value: allData.value.length, color: "var(--el-color-primary)", icon: Folder3Line },
-  { label: "一级分类", value: treeData.value.length, color: "#67c23a", icon: FileList3Line },
-  { label: "本页", value: allData.value.length, color: "var(--el-color-info)", icon: FolderOpened }
+  {
+    label: "分类总数",
+    value: allData.value.length,
+    color: "var(--el-color-primary)",
+    icon: Folder3Line
+  },
+  {
+    label: "一级分类",
+    value: treeData.value.length,
+    color: "#67c23a",
+    icon: FileList3Line
+  },
+  {
+    label: "本页",
+    value: allData.value.length,
+    color: "var(--el-color-info)",
+    icon: FolderOpened
+  }
 ]);
 
 const columns: any[] = [
@@ -62,8 +78,9 @@ async function fetchData() {
     const res = await api.get("/product/category/tree", {
       params: { keyword: searchForm.keyword || undefined }
     });
-    treeData.value = res.data;
-    allData.value = flattenTree(res.data);
+    const roots = responseList(res.data);
+    treeData.value = roots;
+    allData.value = flattenTree(roots);
   } finally {
     loading.value = false;
   }
@@ -164,21 +181,38 @@ onMounted(fetchData);
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 筛选条件卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -231,16 +265,22 @@ onMounted(fetchData);
     </div>
 
     <!-- 表格卡片 -->
-    <PureTableBar title="商品分类" :columns="columns" storage-key="ProductCategory" @refresh="onSearch">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="商品分类"
+      :columns="columns"
+      storage-key="ProductCategory"
+      @refresh="onSearch"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
@@ -255,9 +295,16 @@ onMounted(fetchData);
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
         >
           <template #empty>
-            <EmptyState title="暂无分类数据" description="调整筛选条件或点击新增" />
+            <EmptyState
+              title="暂无分类数据"
+              description="调整筛选条件或点击新增"
+            />
           </template>
           <template #operation="{ row }">
             <div class="flex gap-2">
@@ -359,6 +406,7 @@ onMounted(fetchData);
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

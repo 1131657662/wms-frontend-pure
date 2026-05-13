@@ -6,7 +6,12 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
-import { responseList } from "@/utils/responseList";
+import {
+  dictDataToOptions,
+  responseDictList,
+  responseList,
+  responseTotal
+} from "@/utils/responseList";
 import { hasPerms } from "@/utils/auth";
 
 import AddFill from "~icons/ri/add-circle-line";
@@ -62,12 +67,10 @@ const alertOptions = ref<{ label: string; value: string }[]>([]);
 async function loadAlertDict() {
   try {
     const res = await api.get("/sys/dict/data/stock_alert_level");
-    const list = responseList(res.data);
-    alertOptions.value = list.map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const list = responseDictList(res.data);
+    alertOptions.value = dictDataToOptions(list);
     for (const d of list) {
+      if (!d.dict_value) continue;
       alertLabelMap[d.dict_value] = d.dict_label;
     }
   } catch {
@@ -157,8 +160,8 @@ async function fetchData() {
       if ((filters as any)[k]) params[k] = (filters as any)[k];
     });
     const res = await api.get("/stock/list", { params });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -473,8 +476,8 @@ async function fetchJournal() {
         warehouse_code: journalWarehouseCode
       }
     });
-    journalList.value = res.data.list;
-    journalTotal.value = res.data.total;
+    journalList.value = responseList(res.data);
+    journalTotal.value = responseTotal(res.data);
   } finally {
     journalLoading.value = false;
   }

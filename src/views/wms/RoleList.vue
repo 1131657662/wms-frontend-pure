@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList, responseTotal } from "@/utils/responseList";
 
 import AddFill from "~icons/ri/add-circle-line";
 import Shield from "~icons/ri/shield-user-line";
@@ -78,8 +79,8 @@ async function fetchData() {
         keyword: searchForm.keyword || undefined
       }
     });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }

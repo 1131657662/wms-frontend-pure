@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList, responseTotal } from "@/utils/responseList";
 import Calendar from "~icons/ri/calendar-2-line";
 import OfficeBuilding from "~icons/ep/office-building";
 import Tickets from "~icons/ep/tickets";
@@ -76,12 +77,24 @@ const shortcuts = [
 
 const columns: any[] = [
   { type: "index", label: "#", width: 50, align: "center", fixed: "left" },
-  { label: "日期时间", prop: "create_time", slot: "create_time", minWidth: 160, align: "left" },
+  {
+    label: "日期时间",
+    prop: "create_time",
+    slot: "create_time",
+    minWidth: 160,
+    align: "left"
+  },
   { label: "仓库", prop: "warehouse_name", minWidth: 120, align: "left" },
   { label: "商品编码", prop: "product_code", minWidth: 110, align: "left" },
   { label: "商品名称", prop: "product_name", minWidth: 120, align: "left" },
   { label: "型号", prop: "product_model", minWidth: 100, align: "left" },
-  { label: "业务类型", prop: "business_type", slot: "business_type", width: 90, align: "center" },
+  {
+    label: "业务类型",
+    prop: "business_type",
+    slot: "business_type",
+    width: 90,
+    align: "center"
+  },
   {
     label: "关联单号",
     prop: "order_no",
@@ -98,9 +111,21 @@ const columns: any[] = [
     align: "right"
   },
   { label: "变化前数量", prop: "before_qty", minWidth: 100, align: "right" },
-  { label: "变化前重量", prop: "before_weight", slot: "before_weight", minWidth: 120, align: "right" },
+  {
+    label: "变化前重量",
+    prop: "before_weight",
+    slot: "before_weight",
+    minWidth: 120,
+    align: "right"
+  },
   { label: "变化后数量", prop: "after_qty", minWidth: 100, align: "right" },
-  { label: "变化后重量", prop: "after_weight", slot: "after_weight", minWidth: 120, align: "right" },
+  {
+    label: "变化后重量",
+    prop: "after_weight",
+    slot: "after_weight",
+    minWidth: 120,
+    align: "right"
+  },
   {
     label: "备注",
     prop: "remark",
@@ -125,8 +150,8 @@ async function fetchData() {
       if ((filter as any)[k]) params[k] = (filter as any)[k];
     });
     const res = await api.get("/report/stock-journal", { params });
-    list.value = res.data.list;
-    pagination.total = res.data.total;
+    list.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -146,7 +171,7 @@ function onPageChange(p: number) {
   fetchData();
 }
 function onPageSizeChange(s: number) {
-    localStorage.setItem("page-size-StockJournal", String(s));
+  localStorage.setItem("page-size-StockJournal", String(s));
   pagination.pageSize = s;
   pagination.currentPage = 1;
   fetchData();
@@ -160,17 +185,38 @@ const hasAnyFilter = computed(
     !!filter.business_type
 );
 const statsCards = computed(() => [
-  { label: "总记录数", value: pagination.total || list.value.length, color: "var(--el-color-primary)", icon: DocumentCopy },
+  {
+    label: "总记录数",
+    value: pagination.total || list.value.length,
+    color: "var(--el-color-primary)",
+    icon: DocumentCopy
+  },
   { label: "本页", value: list.value.length, color: "#67c23a", icon: List },
-  { label: "筛选", value: (filter.dateRange?.length === 2 ? 1 : 0) + (filter.warehouse_name ? 1 : 0) + (filter.product_code ? 1 : 0) + (filter.business_type ? 1 : 0), color: "var(--el-color-info)", icon: Filter }
+  {
+    label: "筛选",
+    value:
+      (filter.dateRange?.length === 2 ? 1 : 0) +
+      (filter.warehouse_name ? 1 : 0) +
+      (filter.product_code ? 1 : 0) +
+      (filter.business_type ? 1 : 0),
+    color: "var(--el-color-info)",
+    icon: Filter
+  }
 ]);
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 const exportFileName = computed(() => {
@@ -221,20 +267,37 @@ async function exportData() {
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -319,16 +382,22 @@ async function exportData() {
       </div>
     </div>
 
-    <PureTableBar title="进销存台账" :columns="columns" storage-key="StockJournal" @refresh="search">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="进销存台账"
+      :columns="columns"
+      storage-key="StockJournal"
+      @refresh="search"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
@@ -341,11 +410,18 @@ async function exportData() {
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"
         >
           <template #empty>
-            <EmptyState title="暂无进销存台账数据" description="请设置筛选条件后点击查询" />
+            <EmptyState
+              title="暂无进销存台账数据"
+              description="请设置筛选条件后点击查询"
+            />
           </template>
           <template #create_time="{ row }">{{
             formatTime(row.create_time)
@@ -384,6 +460,7 @@ async function exportData() {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

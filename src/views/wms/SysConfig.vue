@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 
 import Setting from "~icons/ri/settings-3-line";
 import Folder from "~icons/ri/folder-3-line";
@@ -107,7 +108,7 @@ async function fetchData() {
     const params: any = {};
     if (filterGroup.value) params.group = filterGroup.value;
     const res = await api.get("/sys/config/list", { params });
-    list.value = res.data?.list ?? [];
+    list.value = responseList(res.data);
     // 数值型参数后端返回字符串，转为数字以匹配 el-input-number
     for (const item of list.value) {
       if (isNumber(item.config_key)) {
@@ -127,7 +128,7 @@ async function fetchData() {
 
 async function fetchGroups() {
   const res = await api.get("/sys/config/groups");
-  groups.value = res.data;
+  groups.value = responseList<string>(res.data);
 }
 
 // ==================== 操作 ====================
@@ -349,12 +350,12 @@ onMounted(() => {
           :data="filteredList"
           :columns="dynamicColumns"
           :header-cell-style="headerCellStyle"
+          :row-class-name="
+            ({ row }: any) => (modifiedIds.has(row.id) ? 'row-modified' : '')
+          "
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
-          "
-          :row-class-name="
-            ({ row }: any) => (modifiedIds.has(row.id) ? 'row-modified' : '')
           "
         >
           <template #empty>

@@ -5,6 +5,7 @@ import { useDark, useECharts } from "@pureadmin/utils";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList } from "@/utils/responseList";
 import Calendar from "~icons/ri/calendar-2-line";
 import Download from "~icons/ep/download";
 import TrendCharts from "~icons/ep/trend-charts";
@@ -27,7 +28,14 @@ const chartRef = ref<HTMLElement>();
 const { setOptions } = useECharts(chartRef, { theme });
 
 const columns: any[] = [
-  { label: "月份", prop: "month", slot: "month", width: 80, align: "center", fixed: "left" },
+  {
+    label: "月份",
+    prop: "month",
+    slot: "month",
+    width: 80,
+    align: "center",
+    fixed: "left"
+  },
   { label: "入库单数", prop: "inbound_count", minWidth: 100, align: "right" },
   {
     label: "入库重量(吨)",
@@ -46,7 +54,13 @@ const columns: any[] = [
     align: "right"
   },
   { label: "出库数量", prop: "outbound_qty", minWidth: 100, align: "right" },
-  { label: "净入库重量(吨)", prop: "net_weight", slot: "net_weight", minWidth: 130, align: "right" }
+  {
+    label: "净入库重量(吨)",
+    prop: "net_weight",
+    slot: "net_weight",
+    minWidth: 130,
+    align: "right"
+  }
 ];
 
 async function fetchData() {
@@ -55,7 +69,7 @@ async function fetchData() {
     const res = await api.get("/report/monthly-summary", {
       params: { year: year.value }
     });
-    tableData.value = res.data;
+    tableData.value = responseList(res.data);
     await nextTick();
     renderChart();
   } finally {
@@ -127,14 +141,33 @@ function getSummary({ columns, data }: any) {
 
 const hasAnyFilter = computed(() => !!year.value);
 const statsCards = computed(() => [
-  { label: "月度记录数", value: tableData.value.length, color: "var(--el-color-primary)", icon: TrendCharts },
-  { label: "本页", value: tableData.value.length, color: "#67c23a", icon: Document },
-  { label: "筛选", value: hasAnyFilter.value ? 1 : 0, color: "var(--el-color-info)", icon: Filter }
+  {
+    label: "月度记录数",
+    value: tableData.value.length,
+    color: "var(--el-color-primary)",
+    icon: TrendCharts
+  },
+  {
+    label: "本页",
+    value: tableData.value.length,
+    color: "#67c23a",
+    icon: Document
+  },
+  {
+    label: "筛选",
+    value: hasAnyFilter.value ? 1 : 0,
+    color: "var(--el-color-info)",
+    icon: Filter
+  }
 ]);
 const exportFileName = computed(() => `${year.value}年月度出入库汇总.xlsx`);
 
-function search() { fetchData(); }
-function resetFilter() { year.value = new Date().getFullYear().toString(); }
+function search() {
+  fetchData();
+}
+function resetFilter() {
+  year.value = new Date().getFullYear().toString();
+}
 
 async function exportData() {
   if (!hasAnyFilter.value) {
@@ -172,20 +205,37 @@ onMounted(fetchData);
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -237,9 +287,7 @@ onMounted(fetchData);
       </div>
     </div>
 
-    <div
-      class="wms-card mb-4 p-4"
-    >
+    <div class="wms-card mb-4 p-4">
       <div ref="chartRef" class="h-80" />
     </div>
 
@@ -249,12 +297,13 @@ onMounted(fetchData);
       storage-key="MonthlySummary"
       @refresh="fetchData"
     >
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="month"
           border
-
           stripe
           align-whole="left"
           :loading="loading"
@@ -269,9 +318,16 @@ onMounted(fetchData);
           }"
           show-summary
           :summary-method="getSummary"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
         >
           <template #empty>
-            <EmptyState title="暂无月度汇总数据" description="请选择年度后点击查询" />
+            <EmptyState
+              title="暂无月度汇总数据"
+              description="请选择年度后点击查询"
+            />
           </template>
           <template #month="{ row }">{{ row.month }}月</template>
           <template #inbound_weight="{ row }">{{
@@ -296,6 +352,7 @@ onMounted(fetchData);
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

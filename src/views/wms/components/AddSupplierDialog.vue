@@ -131,7 +131,7 @@
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import api from "@/api/wms";
-import { responseList } from "@/utils/responseList";
+import { responseDictOptions } from "@/utils/responseList";
 
 defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
@@ -171,17 +171,9 @@ onMounted(async () => {
       api.get("/sys/dict/data/supplier_level"),
       api.get("/sys/dict/data/cooperation_status")
     ]);
-    supplierTypeOptions.value = responseList(types.data).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
-    supplierLevelOptions.value = responseList(levels.data).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
-    cooperationStatusOptions.value = responseList(statuses.data).map(
-      (d: any) => ({ label: d.dict_label, value: d.dict_value })
-    );
+    supplierTypeOptions.value = responseDictOptions(types.data);
+    supplierLevelOptions.value = responseDictOptions(levels.data);
+    cooperationStatusOptions.value = responseDictOptions(statuses.data);
   } catch {
     /* empty */
   }

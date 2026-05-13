@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import dayjs from "dayjs";
 import { getSecurityLogsApi } from "@/api/user";
+import { responseList, responseTotal } from "@/utils/responseList";
 import { reactive, ref, onMounted } from "vue";
 import { deviceDetection } from "@pureadmin/utils";
 import type { PaginationProps } from "@pureadmin/table";
@@ -61,8 +62,8 @@ async function onSearch() {
       pageSize: pagination.pageSize
     });
     if (res.code === 200 && res.data) {
-      dataList.value = res.data.list || [];
-      pagination.total = res.data.total ?? 0;
+      dataList.value = responseList(res.data);
+      pagination.total = responseTotal(res.data);
       if (res.data.pageSize != null) pagination.pageSize = res.data.pageSize;
       if (res.data.currentPage != null) {
         pagination.currentPage = res.data.currentPage;

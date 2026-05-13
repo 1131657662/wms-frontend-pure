@@ -5,6 +5,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList } from "@/utils/responseList";
 import OfficeBuilding from "~icons/ep/office-building";
 import Clock from "~icons/ep/clock";
 import Search from "~icons/ep/search";
@@ -87,7 +88,7 @@ async function fetchData() {
     if (filter.product_code) params.product_code = filter.product_code;
     if (filter.aging_range) params.aging_range = filter.aging_range;
     const res = await api.get("/report/stock-aging", { params });
-    allData.value = res.data || [];
+    allData.value = responseList(res.data);
     pagination.currentPage = 1;
     applyPagination();
   } finally {
@@ -332,10 +333,6 @@ onMounted(async () => {
           :size="size"
           :data="tableData"
           :columns="dynamicColumns"
-          @header-dragend="
-            (newWidth, _oldWidth, col) =>
-              onColumnResize(col.label || col.property, newWidth)
-          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -343,6 +340,10 @@ onMounted(async () => {
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"
         >

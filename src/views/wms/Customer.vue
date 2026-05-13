@@ -4,7 +4,11 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
-import { responseList } from "@/utils/responseList";
+import {
+  responseDictOptions,
+  responseList,
+  responseTotal
+} from "@/utils/responseList";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -99,8 +103,8 @@ async function fetchData() {
         keyword: searchForm.keyword || undefined
       }
     });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -199,10 +203,7 @@ async function handleDelete(row: any) {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/customer_level");
-    customerLevelOptions.value = responseList(res.data).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    customerLevelOptions.value = responseDictOptions(res.data);
   } catch {
     /* empty */
   }

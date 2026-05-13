@@ -5,7 +5,12 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
-import { responseList } from "@/utils/responseList";
+import {
+  dictDataToOptions,
+  responseDictList,
+  responseList,
+  responseTotal
+} from "@/utils/responseList";
 import {
   formatDate,
   formatOrderStatus,
@@ -78,7 +83,7 @@ async function searchCustomers(q: string) {
   const res = await api.get("/customer/list", {
     params: { keyword: q, pageSize: 200 }
   });
-  customerOptions.value = (res.data.list || []).map((c: any) => ({
+  customerOptions.value = responseList(res.data).map((c: any) => ({
     label: c.customer_name,
     value: c.customer_name
   }));
@@ -408,8 +413,8 @@ async function fetchData() {
     const res = await api.get("/report/outbound-detail", {
       params: buildParams()
     });
-    list.value = res.data.list;
-    pagination.total = res.data.total;
+    list.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -537,12 +542,10 @@ async function exportData() {
 async function loadDict() {
   try {
     const res = await api.get("/sys/dict/data/outbound_type");
-    const blist = responseList(res.data);
-    billTypeOptions.value = blist.map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const blist = responseDictList(res.data);
+    billTypeOptions.value = dictDataToOptions(blist);
     for (const d of blist) {
+      if (!d.dict_value) continue;
       billTypeMap[d.dict_value] = d.dict_label;
     }
   } catch {

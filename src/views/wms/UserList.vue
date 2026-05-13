@@ -5,6 +5,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
 import { fetchAllListPages } from "@/utils/fetchAllListPages";
+import { responseList, responseTotal } from "@/utils/responseList";
 
 import AddFill from "~icons/ri/add-circle-line";
 import User from "~icons/ri/user-line";
@@ -75,8 +76,8 @@ async function fetchData() {
         keyword: searchForm.keyword || undefined
       }
     });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -364,11 +365,11 @@ onMounted(() => {
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          :header-cell-style="headerCellStyle"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :header-cell-style="headerCellStyle"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >

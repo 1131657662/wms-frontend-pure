@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList, responseTotal } from "@/utils/responseList";
 
 import Clock from "~icons/ep/clock";
 import VideoPlay from "~icons/ep/video-play";
@@ -151,7 +152,8 @@ function relativeTimeBrief(t: string) {
 async function fetchTasks() {
   loading.value = true;
   try {
-    tasks.value = (await api.get("/sys/scheduled-task/list")).data?.list ?? [];
+    const r = await api.get("/sys/scheduled-task/list");
+    tasks.value = responseList(r.data);
   } finally {
     loading.value = false;
   }
@@ -206,8 +208,8 @@ async function fetchLogs() {
         task_key: currentLogTaskKey
       }
     });
-    logs.value = res.data.list;
-    logPagination.total = res.data.total;
+    logs.value = responseList(res.data);
+    logPagination.total = responseTotal(res.data);
   } finally {
     logLoading.value = false;
   }

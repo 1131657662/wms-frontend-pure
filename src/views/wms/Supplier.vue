@@ -4,7 +4,13 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
-import { responseList } from "@/utils/responseList";
+import {
+  dictDataToOptions,
+  responseDictList,
+  responseDictOptions,
+  responseList,
+  responseTotal
+} from "@/utils/responseList";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -115,8 +121,8 @@ async function fetchData() {
         keyword: searchForm.keyword || undefined
       }
     });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -227,24 +233,14 @@ async function loadDict() {
       api.get("/sys/dict/data/supplier_level"),
       api.get("/sys/dict/data/cooperation_status")
     ]);
-    const stypes = responseList(types.data);
-    supplierTypeOptions.value = stypes.map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
+    const stypes = responseDictList(types.data);
+    supplierTypeOptions.value = dictDataToOptions(stypes);
     for (const d of stypes) {
+      if (!d.dict_value) continue;
       supplierTypeMap[d.dict_value] = d.dict_label;
     }
-    supplierLevelOptions.value = responseList(levels.data).map((d: any) => ({
-      label: d.dict_label,
-      value: d.dict_value
-    }));
-    cooperationStatusOptions.value = responseList(statuses.data).map(
-      (d: any) => ({
-        label: d.dict_label,
-        value: d.dict_value
-      })
-    );
+    supplierLevelOptions.value = responseDictOptions(levels.data);
+    cooperationStatusOptions.value = responseDictOptions(statuses.data);
   } catch {
     /* empty */
   }
@@ -371,10 +367,6 @@ onMounted(() => {
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
-          @header-dragend="
-            (newWidth, _oldWidth, col) =>
-              onColumnResize(col.label || col.property, newWidth)
-          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -382,6 +374,10 @@ onMounted(() => {
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >

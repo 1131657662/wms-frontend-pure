@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { responseList, responseTotal } from "@/utils/responseList";
 
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
@@ -28,9 +29,24 @@ const pagination = reactive({
 });
 
 const statsCards = computed(() => [
-  { label: "仓库总数", value: pagination.total, color: "var(--el-color-primary)", icon: Building4Line },
-  { label: "启用", value: dataList.value.filter((item: any) => item.is_enabled === 1).length, color: "#67c23a", icon: CheckboxCircleLine },
-  { label: "本页", value: dataList.value.length, color: "var(--el-color-info)", icon: OfficeBuilding }
+  {
+    label: "仓库总数",
+    value: pagination.total,
+    color: "var(--el-color-primary)",
+    icon: Building4Line
+  },
+  {
+    label: "启用",
+    value: dataList.value.filter((item: any) => item.is_enabled === 1).length,
+    color: "#67c23a",
+    icon: CheckboxCircleLine
+  },
+  {
+    label: "本页",
+    value: dataList.value.length,
+    color: "var(--el-color-info)",
+    icon: OfficeBuilding
+  }
 ]);
 
 const columns: any[] = [
@@ -80,8 +96,8 @@ async function fetchData() {
         keyword: searchForm.keyword || undefined
       }
     });
-    dataList.value = res.data.list;
-    pagination.total = res.data.total;
+    dataList.value = responseList(res.data);
+    pagination.total = responseTotal(res.data);
   } finally {
     loading.value = false;
   }
@@ -97,7 +113,7 @@ const resetForm = () => {
   fetchData();
 };
 const handleSizeChange = (v: number) => {
-    localStorage.setItem("page-size-Warehouse", String(v));
+  localStorage.setItem("page-size-Warehouse", String(v));
   pagination.pageSize = v;
   fetchData();
 };
@@ -202,21 +218,38 @@ onMounted(fetchData);
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 筛选条件卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -269,16 +302,22 @@ onMounted(fetchData);
     </div>
 
     <!-- 表格卡片 -->
-    <PureTableBar title="仓库管理" :columns="columns" storage-key="Warehouse" @refresh="onSearch">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="仓库管理"
+      :columns="columns"
+      storage-key="Warehouse"
+      @refresh="onSearch"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="id"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
@@ -291,11 +330,18 @@ onMounted(fetchData);
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >
           <template #empty>
-            <EmptyState title="暂无仓库数据" description="调整筛选条件或点击新增" />
+            <EmptyState
+              title="暂无仓库数据"
+              description="调整筛选条件或点击新增"
+            />
           </template>
           <template #capacity="{ row }">
             {{ row.capacity != null ? Number(row.capacity).toFixed(4) : "-" }}
@@ -441,6 +487,7 @@ onMounted(fetchData);
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }
