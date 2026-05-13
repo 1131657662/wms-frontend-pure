@@ -11,6 +11,7 @@ import { hasPerms } from "@/utils/auth";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 import * as XLSX from "xlsx";
 
 import AddFill from "~icons/ri/add-circle-line";
@@ -486,10 +487,10 @@ function exportToExcel(rows: any[], filename: string) {
 }
 
 async function fetchAllData(params: Record<string, any>) {
-  const res = await api.get("/outbound/order/list", {
-    params: { ...params, page: 1, pageSize: 100000 }
-  });
-  return res.data.list || [];
+  return fetchAllListPages(
+    "/outbound/order/list",
+    params as Record<string, unknown>
+  );
 }
 
 async function handleExportCommand(command: string) {
