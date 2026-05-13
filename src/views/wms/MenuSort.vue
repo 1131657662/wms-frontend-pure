@@ -10,6 +10,7 @@ import {
   saveMenuOrderToStorage,
   applyMenuOrderToRoutes
 } from "@/utils/menuOrder";
+import { WMS_MENU_LABEL_DEFS } from "@/constants/wmsMenuRegistry";
 
 import Menu from "~icons/ri/menu-line";
 import FileList from "~icons/ri/file-list-3-line";
@@ -32,51 +33,11 @@ const loading = ref(true);
 const errorMsg = ref("");
 const dirty = ref(false);
 
-const menuDefs: Record<string, any> = {
-  dashboard: { label: "首页" },
-  "/dashboard/analysis": { label: "分析页" },
-  "/dashboard/workplace": { label: "工作台" },
-  report: { label: "统计报表" },
-  "/report/monthly-summary": { label: "月度出入库汇总" },
-  "/report/turnover": { label: "商品周转率统计" },
-  "/report/inbound-detail": { label: "入库明细报表" },
-  "/report/outbound-detail": { label: "出库明细报表" },
-  "/report/stock-journal": { label: "进销存台账" },
-  "/report/period-summary": { label: "收发存汇总表" },
-  "/report/stock-aging": { label: "库龄分析报表" },
-  base: { label: "基础资料" },
-  "/product-category": { label: "商品分类" },
-  "/product": { label: "商品管理" },
-  "/warehouse": { label: "仓库管理" },
-  "/supplier": { label: "供应商管理" },
-  "/customer": { label: "客户管理" },
-  "/vehicle": { label: "车辆管理" },
-  inbound: { label: "入库管理" },
-  "/inbound/list": { label: "入库单列表" },
-  outbound: { label: "出库管理" },
-  "/outbound/list": { label: "出库单列表" },
-  "stock-check": { label: "盘点管理" },
-  "/stock-check/list": { label: "盘点单列表" },
-  stock: { label: "库存管理" },
-  "/stock/list": { label: "库存查询" },
-  auth: { label: "权限管理" },
-  "/auth/user": { label: "用户管理" },
-  "/auth/role": { label: "角色管理" },
-  "/auth/menu-sort": { label: "菜单排序" },
-  settings: { label: "系统配置" },
-  "/settings/dict": { label: "数据字典" },
-  "/settings/param": { label: "系统参数" },
-  "/settings/bill": { label: "单据编号配置" },
-  "/settings/print": { label: "打印设置" },
-  "/settings/backup": { label: "数据备份" },
-  monitor: { label: "系统监控" },
-  "/monitor/log": { label: "日志管理" },
-  "/monitor/online": { label: "在线用户" },
-  "/monitor/task": { label: "定时任务" },
-  "/monitor/health": { label: "健康监控" },
-  message: { label: "消息中心" },
-  "/message/center": { label: "消息列表" }
-};
+interface MenuSortApiRow {
+  menu_code: string;
+  parent_code: string | null;
+  sort_order: number;
+}
 
 // ==================== 统计 ====================
 const stats = computed(() => ({
@@ -94,33 +55,38 @@ async function fetchData() {
   errorMsg.value = "";
   try {
     const res = await api.get("/system/menu/list");
-    const rows = responseList(res.data);
+    const rows = responseList(res.data) as MenuSortApiRow[];
     const tops = rows
-      .filter((r: any) => !r.parent_code)
-      .sort((a: any, b: any) => a.sort_order - b.sort_order);
-    menuGroups.value = tops.map((t: any) => {
-      const def = menuDefs[t.menu_code] || {};
+      .filter(r => !r.parent_code)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    menuGroups.value = tops.map(t => {
+      const def = WMS_MENU_LABEL_DEFS[t.menu_code];
       const children = rows
-        .filter((r: any) => r.parent_code === t.menu_code)
-        .sort((a: any, b: any) => a.sort_order - b.sort_order)
-        .map((c: any) => ({
+        .filter(r => r.parent_code === t.menu_code)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(c => ({
           ...c,
           code: c.menu_code,
-          label: (menuDefs[c.menu_code] || {}).label || c.menu_code,
-          route: c.menu_code
+          label: WMS_MENU_LABEL_DEFS[c.menu_code]?.label ?? c.menu_code,
+          route: c.menu_code,
+          children: [] as MenuItem[]
         }));
       return {
         ...t,
         code: t.menu_code,
-        label: def.label || t.menu_code,
+        label: def?.label ?? t.menu_code,
         route: t.menu_code,
         children
       };
     });
     dirty.value = false;
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
     errorMsg.value =
-      e.response?.data?.message || e.message || "获取菜单排序失败";
+      err.response?.data?.message || err.message || "获取菜单排序失败";
   } finally {
     loading.value = false;
   }

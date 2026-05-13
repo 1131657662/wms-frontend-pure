@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import dayjs from "dayjs";
-import { getSecurityLogsApi } from "@/api/user";
+import { getSecurityLogsApi, type SecurityLogRow } from "@/api/user";
 import { responseList, responseTotal } from "@/utils/responseList";
+import {
+  LOGIN_LOG_EVENT_LABEL,
+  type LoginLogEventType
+} from "@/constants/wmsAudit";
 import { reactive, ref, onMounted } from "vue";
 import { deviceDetection } from "@pureadmin/utils";
 import type { PaginationProps } from "@pureadmin/table";
@@ -11,7 +15,7 @@ defineOptions({
 });
 
 const loading = ref(true);
-const dataList = ref([]);
+const dataList = ref<SecurityLogRow[]>([]);
 const pagination = reactive<PaginationProps>({
   total: 0,
   pageSize: 10,
@@ -19,7 +23,17 @@ const pagination = reactive<PaginationProps>({
   background: true,
   layout: "prev, pager, next"
 });
+function eventTypeLabel(et: string) {
+  return LOGIN_LOG_EVENT_LABEL[et as LoginLogEventType] ?? et;
+}
+
 const columns: TableColumnList = [
+  {
+    label: "事件",
+    prop: "eventType",
+    minWidth: 96,
+    formatter: ({ eventType }) => eventTypeLabel(String(eventType ?? ""))
+  },
   {
     label: "详情",
     prop: "summary",
@@ -57,12 +71,12 @@ const columns: TableColumnList = [
 async function onSearch() {
   loading.value = true;
   try {
-    const res: any = await getSecurityLogsApi({
+    const res = await getSecurityLogsApi({
       page: pagination.currentPage,
       pageSize: pagination.pageSize
     });
     if (res.code === 200 && res.data) {
-      dataList.value = responseList(res.data);
+      dataList.value = responseList<SecurityLogRow>(res.data);
       pagination.total = responseTotal(res.data);
       if (res.data.pageSize != null) pagination.pageSize = res.data.pageSize;
       if (res.data.currentPage != null) {

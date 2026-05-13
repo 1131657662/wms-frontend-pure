@@ -1,5 +1,6 @@
 const Layout = () => import("@/layout/index.vue");
 
+/** 侧栏菜单文案与排序 key 见 `src/constants/wmsMenuRegistry.ts`（与后端 sys_menu_sort 对齐） */
 export default [
   // ==================== Dashboard ====================
   {

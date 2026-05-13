@@ -9,25 +9,25 @@ export const EXPORT_PAGE_CHUNK = 5000;
 
 const MAX_PAGES = 500;
 
-type ListPayload = { list?: any[]; total?: number };
+type ListPayload = { list?: unknown[]; total?: number };
 
 /**
  * 分页拉取列表直到拿全（下拉、导出等）。
  * 默认 `pageSize` 为 {@link LIST_PAGE_CHUNK_DEFAULT}；导出请传入 {@link EXPORT_PAGE_CHUNK} 等。
  */
-export async function fetchAllListPages(
+export async function fetchAllListPages<T = Record<string, unknown>>(
   url: string,
   baseParams: Record<string, unknown> = {},
   pageSize = LIST_PAGE_CHUNK_DEFAULT
-): Promise<any[]> {
-  const all: any[] = [];
+): Promise<T[]> {
+  const all: T[] = [];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
     const res = await api.get(url, {
       params: { ...baseParams, page, pageSize }
     });
     const data = res.data as ListPayload;
-    const chunk = responseList(data);
+    const chunk = responseList(data) as T[];
     all.push(...chunk);
     const total = responseTotal(data);
     if (chunk.length === 0) break;

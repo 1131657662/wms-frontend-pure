@@ -107,12 +107,35 @@ export const getMine = async () => {
   return { code: 0, data: res.data };
 };
 
-/** 账户设置-个人安全日志（WMS 后端） */
+/** 账户设置-安全日志行（user_login_log 聚合） */
+export type SecurityLogRow = {
+  id: number;
+  eventType: string;
+  summary: string;
+  ip: string;
+  address: string;
+  system: string;
+  browser: string;
+  operatingTime: string;
+};
+
+export type WmsSecurityLogsPayload = {
+  list: SecurityLogRow[];
+  total: number;
+  pageSize?: number;
+  currentPage?: number;
+};
+
+/** 账户设置-个人安全日志（WMS 后端；拦截器已解包为 response.data） */
 export const getSecurityLogsApi = (params?: {
   page?: number;
   pageSize?: number;
 }) => {
-  return api.get("/user/security-logs", { params });
+  return api.get("/user/security-logs", { params }) as Promise<{
+    code: number;
+    message?: string;
+    data: WmsSecurityLogsPayload;
+  }>;
 };
 
 /** 账户设置-修改密码 */
