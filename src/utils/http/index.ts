@@ -11,6 +11,7 @@ import type {
 } from "./types.d";
 import { stringify } from "qs";
 import { message } from "@/utils/message";
+import { parseBackendErrorMessage } from "@/utils/apiErrorMessage";
 import { $t, transformI18n } from "@/plugins/i18n";
 import { getToken, formatToken } from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
@@ -141,7 +142,14 @@ class PureHttp {
       (error: PureHttpError) => {
         const $error = error;
         $error.isCancelRequest = Axios.isCancel($error);
-        // 所有的响应异常 区分来源为取消请求/非取消请求
+        const url = String($error.config?.url || "");
+        const skipGlobalMessage =
+          $error.isCancelRequest ||
+          url.includes("/refresh-token") ||
+          url.endsWith("/login");
+        if (!skipGlobalMessage && $error.response) {
+          message(parseBackendErrorMessage($error), { type: "error" });
+        }
         return Promise.reject($error);
       }
     );

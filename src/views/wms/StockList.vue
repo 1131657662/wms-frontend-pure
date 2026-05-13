@@ -210,7 +210,7 @@ async function loadWarehouses() {
     warehouses.value =
       (
         await api.get("/warehouse/list", {
-          params: { pageSize: 1000, enabled: 1 }
+          params: { pageSize: 500, enabled: 1 }
         })
       ).data.list || [];
   } catch {
@@ -235,7 +235,7 @@ async function searchProduct(keyword?: string) {
   productLoading.value = true;
   try {
     const res = await api.get("/product/search", {
-      params: { keyword: keyword || undefined, pageSize: 500 }
+      params: { keyword: keyword || undefined, pageSize: 200 }
     });
     const data = res.data || [];
     productOptions.value = data;
@@ -991,11 +991,11 @@ onMounted(() => {
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
+          :header-cell-style="headerCellStyle"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :header-cell-style="headerCellStyle"
           @page-size-change="handleSizeChange"
           @page-current-change="handleCurrentChange"
         >

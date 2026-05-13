@@ -74,7 +74,7 @@ async function searchCustomers(q: string) {
     return;
   }
   const res = await api.get("/customer/list", {
-    params: { keyword: q, pageSize: 500 }
+    params: { keyword: q, pageSize: 200 }
   });
   customerOptions.value = (res.data.list || []).map((c: any) => ({
     label: c.customer_name,
@@ -87,7 +87,7 @@ async function searchProducts(q: string) {
     return;
   }
   const res = await api.get("/product/search", {
-    params: { keyword: q, pageSize: 500 }
+    params: { keyword: q, pageSize: 200 }
   });
   productOptions.value = (res.data || []).map((p: any) => ({
     label: `${p.product_code} / ${p.product_name}`,
@@ -102,7 +102,7 @@ async function searchVehicles(q: string) {
     return;
   }
   const res = await api.get("/vehicle/search", {
-    params: { keyword: q, pageSize: 500 }
+    params: { keyword: q, pageSize: 200 }
   });
   vehicleOptions.value = (res.data || []).map((v: any) => ({
     label: v.plate_number,
@@ -756,10 +756,6 @@ onMounted(async () => {
           :size="size"
           :data="list"
           :columns="dynamicColumns"
-          @header-dragend="
-            (newWidth, _oldWidth, col) =>
-              onColumnResize(col.label || col.property, newWidth)
-          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -767,6 +763,10 @@ onMounted(async () => {
             fontWeight: 600,
             height: '48px'
           }"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"
         >

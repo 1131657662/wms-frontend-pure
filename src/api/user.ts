@@ -1,6 +1,7 @@
 import { http } from "@/utils/http";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import api from "@/api/wms";
+import { parseBackendErrorMessage } from "@/utils/apiErrorMessage";
 
 export type UserResult = {
   code: number;
@@ -85,8 +86,12 @@ export const getLogin = async (data?: object) => {
       };
     }
     throw new Error(d.message || "登录失败");
-  } catch (err: any) {
-    const msg = err.response?.data?.message || err.message || "登录失败";
+  } catch (err: unknown) {
+    const msg = isAxiosError(err)
+      ? parseBackendErrorMessage(err)
+      : err instanceof Error
+        ? err.message
+        : "登录失败";
     throw new Error(msg);
   }
 };

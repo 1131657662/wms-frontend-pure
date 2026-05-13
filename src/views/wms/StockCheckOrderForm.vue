@@ -76,7 +76,7 @@ function getSummary({ columns }: any) {
 
 async function loadWarehouses() {
   const res = await api.get("/warehouse/list", {
-    params: { pageSize: 1000, enabled: 1 }
+    params: { pageSize: 500, enabled: 1 }
   });
   warehouses.value = res.data.list || [];
 }
@@ -88,7 +88,7 @@ async function onWarehouseChange(_code: string) {
 async function loadStock() {
   stockLoading.value = true;
   try {
-    const params: any = { pageSize: 1000 };
+    const params: any = { pageSize: 500 };
     if (form.warehouse_code) params.warehouse_code = form.warehouse_code;
     const res = await api.get("/stock/list", { params });
     details.value = (res.data.list || []).map((s: any) => ({
@@ -184,10 +184,7 @@ onMounted(async () => {
 <template>
   <div class="px-5 py-4">
     <!-- 主表信息卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div class="flex-bc mb-5">
         <div
           class="flex items-center gap-2 text-sm font-semibold"
@@ -242,10 +239,7 @@ onMounted(async () => {
     </div>
 
     <!-- 盘点明细卡片 -->
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div class="flex-bc mb-4">
         <div
           class="flex items-center gap-2 text-sm font-semibold"
@@ -265,7 +259,8 @@ onMounted(async () => {
           >加载库存</el-button
         >
       </div>
-      <el-table border
+      <el-table
+        border
         :data="details"
         stripe
         row-key="uuid"
@@ -274,10 +269,30 @@ onMounted(async () => {
         :header-cell-style="headerCellStyle"
       >
         <el-table-column type="index" label="#" width="56" />
-        <el-table-column prop="warehouse_name" label="仓库" width="140" show-overflow-tooltip />
-        <el-table-column prop="product_code" label="产品编码" width="140" show-overflow-tooltip />
-        <el-table-column prop="product_name" label="产品名称" width="150" show-overflow-tooltip />
-        <el-table-column prop="product_model" label="型号" width="150" show-overflow-tooltip />
+        <el-table-column
+          prop="warehouse_name"
+          label="仓库"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="product_code"
+          label="产品编码"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="product_name"
+          label="产品名称"
+          width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="product_model"
+          label="型号"
+          width="150"
+          show-overflow-tooltip
+        />
         <el-table-column prop="before_qty" label="盘点前件数" width="110" />
         <el-table-column prop="before_weight" label="盘点前吨位" width="120" />
         <el-table-column label="实盘件数" width="120">

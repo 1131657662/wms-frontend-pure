@@ -81,7 +81,7 @@ async function searchSuppliers(q: string) {
     return;
   }
   const res = await api.get("/supplier/list", {
-    params: { keyword: q, pageSize: 500 }
+    params: { keyword: q, pageSize: 200 }
   });
   supplierOptions.value = (res.data.list || []).map((s: any) => ({
     label: s.supplier_name,
@@ -94,7 +94,7 @@ async function searchProducts(q: string) {
     return;
   }
   const res = await api.get("/product/search", {
-    params: { keyword: q, pageSize: 500 }
+    params: { keyword: q, pageSize: 200 }
   });
   productOptions.value = (res.data || []).map((p: any) => ({
     label: `${p.product_code} / ${p.product_name}`,
@@ -109,7 +109,7 @@ async function searchVehicles(q: string) {
     return;
   }
   const res = await api.get("/vehicle/search", {
-    params: { keyword: q, pageSize: 500 }
+    params: { keyword: q, pageSize: 200 }
   });
   vehicleOptions.value = (res.data || []).map((v: any) => ({
     label: v.plate_number,
@@ -774,12 +774,12 @@ onMounted(async () => {
           :size="size"
           :data="list"
           :columns="dynamicColumns"
+          :pagination="{ ...pagination, size }"
+          :header-cell-style="headerCellStyle"
           @header-dragend="
             (newWidth, _oldWidth, col) =>
               onColumnResize(col.label || col.property, newWidth)
           "
-          :pagination="{ ...pagination, size }"
-          :header-cell-style="headerCellStyle"
           @page-size-change="onPageSizeChange"
           @page-current-change="onPageChange"
         >

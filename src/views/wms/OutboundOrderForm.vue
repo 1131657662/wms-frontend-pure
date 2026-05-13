@@ -124,7 +124,7 @@ async function searchCustomer(keyword?: string) {
   customerLoading.value = true;
   try {
     const res = await api.get("/customer/search", {
-      params: { keyword: keyword || undefined, pageSize: 500 }
+      params: { keyword: keyword || undefined, pageSize: 200 }
     });
     customerOptions.value = res.data || [];
   } finally {
@@ -169,7 +169,7 @@ async function searchProduct(keyword?: string) {
   productLoading.value = true;
   try {
     const res = await api.get("/product/search", {
-      params: { keyword: keyword || undefined, pageSize: 500 }
+      params: { keyword: keyword || undefined, pageSize: 200 }
     });
     productOptions.value = res.data || [];
   } finally {
@@ -181,7 +181,7 @@ async function searchVehicle(keyword?: string) {
   vehicleLoading.value = true;
   try {
     const res = await api.get("/vehicle/search", {
-      params: { keyword: keyword || undefined, pageSize: 500 }
+      params: { keyword: keyword || undefined, pageSize: 200 }
     });
     vehicleOptions.value = res.data || [];
   } finally {
@@ -370,7 +370,7 @@ async function loadData() {
 
 async function loadWarehouses() {
   const res = await api.get("/warehouse/list", {
-    params: { pageSize: 1000, enabled: 1 }
+    params: { pageSize: 500, enabled: 1 }
   });
   warehouses.value = res.data.list || [];
 }

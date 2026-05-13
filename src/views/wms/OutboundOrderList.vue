@@ -212,7 +212,7 @@ function handleRowClick(row: any, _column: any, event: Event) {
 async function loadWarehouses() {
   try {
     const res = await api.get("/warehouse/list", {
-      params: { pageSize: 1000, enabled: 1 }
+      params: { pageSize: 500, enabled: 1 }
     });
     warehouses.value = res.data.list || [];
   } catch {
