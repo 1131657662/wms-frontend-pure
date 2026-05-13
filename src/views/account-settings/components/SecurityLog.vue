@@ -32,12 +32,16 @@ const columns: TableColumnList = [
     label: "事件",
     prop: "eventType",
     minWidth: 96,
-    formatter: ({ eventType }) => eventTypeLabel(String(eventType ?? ""))
+    formatter: row => eventTypeLabel(String(row?.eventType ?? ""))
   },
   {
     label: "详情",
     prop: "summary",
-    minWidth: 140
+    minWidth: 140,
+    formatter: row => {
+      const s = String(row?.summary ?? "");
+      return s.replace(/^【[^】]+】\s*/, "").trim() || s;
+    }
   },
   {
     label: "IP 地址",
@@ -63,8 +67,7 @@ const columns: TableColumnList = [
     label: "时间",
     prop: "operatingTime",
     minWidth: 180,
-    formatter: ({ operatingTime }) =>
-      dayjs(operatingTime).format("YYYY-MM-DD HH:mm:ss")
+    formatter: row => dayjs(row?.operatingTime).format("YYYY-MM-DD HH:mm:ss")
   }
 ];
 
