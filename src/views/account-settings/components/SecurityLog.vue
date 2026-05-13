@@ -37,11 +37,7 @@ const columns: TableColumnList = [
   {
     label: "详情",
     prop: "summary",
-    minWidth: 140,
-    formatter: row => {
-      const s = String(row?.summary ?? "");
-      return s.replace(/^【[^】]+】\s*/, "").trim() || s;
-    }
+    minWidth: 140
   },
   {
     label: "IP 地址",
