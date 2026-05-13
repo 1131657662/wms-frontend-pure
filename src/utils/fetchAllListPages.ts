@@ -6,8 +6,8 @@ const MAX_PAGES = 500;
 type ListPayload = { list?: any[]; total?: number };
 
 /**
- * 分页拉取列表直到拿全（浏览器端导出等场景）。
- * 依赖后端 `data.list` + `data.total`；单页条数默认 5000，与后端 WMS_BULK_LIST_MAX 默认兼容。
+ * 分页拉取列表直到拿全（浏览器端导出、下拉全量主数据等场景）。
+ * 依赖后端 `data.list` + `data.total`；单页条数默认 5000，与后端 API_MAX_PAGE_SIZE 默认兼容。
  */
 export async function fetchAllListPages(
   url: string,

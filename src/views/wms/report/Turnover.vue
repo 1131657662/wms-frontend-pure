@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 import Calendar from "~icons/ri/calendar-2-line";
 import OfficeBuilding from "~icons/ep/office-building";
 import Search from "~icons/ep/search";
@@ -86,7 +87,13 @@ const columns: any[] = [
     minWidth: 140,
     align: "right"
   },
-  { label: "周转率", prop: "turnover", slot: "turnover", minWidth: 140, align: "right" }
+  {
+    label: "周转率",
+    prop: "turnover",
+    slot: "turnover",
+    minWidth: 140,
+    align: "right"
+  }
 ];
 
 function turnoverColor(val: number): string {
@@ -143,7 +150,7 @@ function onPageChange(p: number) {
   applyPagination();
 }
 function onPageSizeChange(s: number) {
-    localStorage.setItem("page-size-Turnover", String(s));
+  localStorage.setItem("page-size-Turnover", String(s));
   pagination.pageSize = s;
   pagination.currentPage = 1;
   applyPagination();
@@ -153,9 +160,25 @@ const hasAnyFilter = computed(
   () => dateRange.value?.length === 2 || !!filter.warehouse_code
 );
 const statsCards = computed(() => [
-  { label: "总记录数", value: pagination.total || tableData.value.length, color: "var(--el-color-primary)", icon: RefreshRight },
-  { label: "本页", value: tableData.value.length, color: "#67c23a", icon: Sort },
-  { label: "筛选", value: (dateRange.value?.length === 2 ? 1 : 0) + (filter.warehouse_code ? 1 : 0), color: "var(--el-color-info)", icon: DataLine }
+  {
+    label: "总记录数",
+    value: pagination.total || tableData.value.length,
+    color: "var(--el-color-primary)",
+    icon: RefreshRight
+  },
+  {
+    label: "本页",
+    value: tableData.value.length,
+    color: "#67c23a",
+    icon: Sort
+  },
+  {
+    label: "筛选",
+    value:
+      (dateRange.value?.length === 2 ? 1 : 0) + (filter.warehouse_code ? 1 : 0),
+    color: "var(--el-color-info)",
+    icon: DataLine
+  }
 ]);
 const exportFileName = computed(() => {
   const p: string[] = ["商品周转率统计"];
@@ -193,8 +216,7 @@ async function exportData() {
 }
 
 async function fetchWarehouses() {
-  const res = await api.get("/warehouse/list", { params: { pageSize: 999 } });
-  warehouses.value = res.data.list || [];
+  warehouses.value = (await fetchAllListPages("/warehouse/list", {})) as any[];
 }
 
 onMounted(fetchWarehouses);
@@ -209,20 +231,37 @@ onMounted(fetchWarehouses);
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -291,21 +330,31 @@ onMounted(fetchWarehouses);
       </div>
     </div>
 
-    <PureTableBar title="商品周转率统计" :columns="columns" storage-key="Turnover" @refresh="search">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="商品周转率统计"
+      :columns="columns"
+      storage-key="Turnover"
+      @refresh="search"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="product_code"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
           :data="tableData"
           :columns="dynamicColumns"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -317,7 +366,10 @@ onMounted(fetchWarehouses);
           @page-current-change="onPageChange"
         >
           <template #empty>
-            <EmptyState title="暂无周转率数据" description="请选择日期范围后点击查询" />
+            <EmptyState
+              title="暂无周转率数据"
+              description="请选择日期范围后点击查询"
+            />
           </template>
           <template #outbound_weight="{ row }">{{
             Number(row.outbound_weight || 0).toFixed(4)
@@ -367,6 +419,7 @@ onMounted(fetchWarehouses);
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

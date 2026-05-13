@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 import {
   formatDate,
   formatOrderStatus,
@@ -573,12 +574,12 @@ async function loadDict() {
 
 onMounted(async () => {
   loadDict();
-  const [whRes, spRes] = await Promise.all([
-    api.get("/warehouse/list", { params: { pageSize: 999 } }),
-    api.get("/supplier/list", { params: { pageSize: 999 } })
+  const [wh, sp] = await Promise.all([
+    fetchAllListPages("/warehouse/list", {}),
+    fetchAllListPages("/supplier/list", {})
   ]);
-  warehouses.value = whRes.data.list || [];
-  suppliers.value = spRes.data.list || [];
+  warehouses.value = wh as any[];
+  suppliers.value = sp as any[];
 });
 </script>
 

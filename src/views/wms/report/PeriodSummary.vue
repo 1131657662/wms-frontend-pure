@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 import Calendar from "~icons/ri/calendar-2-line";
 import OfficeBuilding from "~icons/ep/office-building";
 import Search from "~icons/ep/search";
@@ -79,11 +80,29 @@ const columns: any[] = [
     align: "right"
   },
   { label: "入库数量", prop: "in_qty", minWidth: 90, align: "right" },
-  { label: "入库重量(吨)", prop: "in_weight", slot: "in_weight", minWidth: 120, align: "right" },
+  {
+    label: "入库重量(吨)",
+    prop: "in_weight",
+    slot: "in_weight",
+    minWidth: 120,
+    align: "right"
+  },
   { label: "出库数量", prop: "out_qty", minWidth: 90, align: "right" },
-  { label: "出库重量(吨)", prop: "out_weight", slot: "out_weight", minWidth: 120, align: "right" },
+  {
+    label: "出库重量(吨)",
+    prop: "out_weight",
+    slot: "out_weight",
+    minWidth: 120,
+    align: "right"
+  },
   { label: "期末数量", prop: "end_qty", minWidth: 90, align: "right" },
-  { label: "期末重量(吨)", prop: "end_weight", slot: "end_weight", minWidth: 130, align: "right" }
+  {
+    label: "期末重量(吨)",
+    prop: "end_weight",
+    slot: "end_weight",
+    minWidth: 130,
+    align: "right"
+  }
 ];
 
 function applyPagination() {
@@ -122,7 +141,7 @@ function onPageChange(p: number) {
   applyPagination();
 }
 function onPageSizeChange(s: number) {
-    localStorage.setItem("page-size-PeriodSummary", String(s));
+  localStorage.setItem("page-size-PeriodSummary", String(s));
   pagination.pageSize = s;
   pagination.currentPage = 1;
   applyPagination();
@@ -132,9 +151,21 @@ const hasAnyFilter = computed(
   () => filter.dateRange?.length === 2 || !!filter.warehouse_code
 );
 const statsCards = computed(() => [
-  { label: "总记录数", value: pagination.total || tableData.value.length, color: "var(--el-color-primary)", icon: DataAnalysis },
+  {
+    label: "总记录数",
+    value: pagination.total || tableData.value.length,
+    color: "var(--el-color-primary)",
+    icon: DataAnalysis
+  },
   { label: "本页", value: tableData.value.length, color: "#67c23a", icon: Box },
-  { label: "筛选", value: (filter.dateRange?.length === 2 ? 1 : 0) + (filter.warehouse_code ? 1 : 0), color: "var(--el-color-info)", icon: Filter }
+  {
+    label: "筛选",
+    value:
+      (filter.dateRange?.length === 2 ? 1 : 0) +
+      (filter.warehouse_code ? 1 : 0),
+    color: "var(--el-color-info)",
+    icon: Filter
+  }
 ]);
 const exportFileName = computed(() => {
   const p: string[] = ["收发存汇总表"];
@@ -173,8 +204,7 @@ async function exportData() {
 }
 
 onMounted(async () => {
-  const res = await api.get("/warehouse/list", { params: { pageSize: 999 } });
-  warehouses.value = res.data.list || [];
+  warehouses.value = (await fetchAllListPages("/warehouse/list", {})) as any[];
 });
 </script>
 
@@ -187,20 +217,37 @@ onMounted(async () => {
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -269,21 +316,31 @@ onMounted(async () => {
       </div>
     </div>
 
-    <PureTableBar title="收发存汇总表" :columns="columns" storage-key="PeriodSummary" @refresh="search">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="收发存汇总表"
+      :columns="columns"
+      storage-key="PeriodSummary"
+      @refresh="search"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="product_code"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
           :data="tableData"
           :columns="dynamicColumns"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -295,7 +352,10 @@ onMounted(async () => {
           @page-current-change="onPageChange"
         >
           <template #empty>
-            <EmptyState title="暂无收发存汇总数据" description="请设置筛选条件后点击查询" />
+            <EmptyState
+              title="暂无收发存汇总数据"
+              description="请设置筛选条件后点击查询"
+            />
           </template>
           <template #begin_weight="{ row }">{{
             Number(row.begin_weight || 0).toFixed(4)
@@ -320,6 +380,7 @@ onMounted(async () => {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }

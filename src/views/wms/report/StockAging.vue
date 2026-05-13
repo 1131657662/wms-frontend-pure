@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import api from "@/api/wms";
+import { fetchAllListPages } from "@/utils/fetchAllListPages";
 import OfficeBuilding from "~icons/ep/office-building";
 import Clock from "~icons/ep/clock";
 import Search from "~icons/ep/search";
@@ -63,7 +64,13 @@ const columns: any[] = [
     align: "right",
     sortable: true
   },
-  { label: "库龄区间", prop: "aging_range", slot: "aging_range", minWidth: 110, align: "center" }
+  {
+    label: "库龄区间",
+    prop: "aging_range",
+    slot: "aging_range",
+    minWidth: 110,
+    align: "center"
+  }
 ];
 
 function applyPagination() {
@@ -100,7 +107,7 @@ function onPageChange(p: number) {
   applyPagination();
 }
 function onPageSizeChange(s: number) {
-    localStorage.setItem("page-size-StockAging", String(s));
+  localStorage.setItem("page-size-StockAging", String(s));
   pagination.pageSize = s;
   pagination.currentPage = 1;
   applyPagination();
@@ -110,17 +117,42 @@ const hasAnyFilter = computed(
   () => !!filter.warehouse_code || !!filter.product_code || !!filter.aging_range
 );
 const statsCards = computed(() => [
-  { label: "总记录数", value: pagination.total || tableData.value.length, color: "var(--el-color-primary)", icon: Timer },
-  { label: "本页", value: tableData.value.length, color: "#67c23a", icon: Clock },
-  { label: "筛选", value: (filter.warehouse_code ? 1 : 0) + (filter.product_code ? 1 : 0) + (filter.aging_range ? 1 : 0), color: "var(--el-color-info)", icon: Filter }
+  {
+    label: "总记录数",
+    value: pagination.total || tableData.value.length,
+    color: "var(--el-color-primary)",
+    icon: Timer
+  },
+  {
+    label: "本页",
+    value: tableData.value.length,
+    color: "#67c23a",
+    icon: Clock
+  },
+  {
+    label: "筛选",
+    value:
+      (filter.warehouse_code ? 1 : 0) +
+      (filter.product_code ? 1 : 0) +
+      (filter.aging_range ? 1 : 0),
+    color: "var(--el-color-info)",
+    icon: Filter
+  }
 ]);
 function formatTime(t: string) {
   if (!t) return "—";
-  return new Date(t).toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai", hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  }).replace(/\//g, "-");
+  return new Date(t)
+    .toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    .replace(/\//g, "-");
 }
 
 const exportFileName = computed(() => {
@@ -157,8 +189,7 @@ async function exportData() {
 }
 
 onMounted(async () => {
-  const res = await api.get("/warehouse/list", { params: { pageSize: 999 } });
-  warehouses.value = res.data.list || [];
+  warehouses.value = (await fetchAllListPages("/warehouse/list", {})) as any[];
 });
 </script>
 
@@ -171,20 +202,37 @@ onMounted(async () => {
         class="wms-card flex-1 flex items-center gap-3"
         :style="{ padding: '16px 20px' }"
       >
-        <div class="flex items-center justify-center rounded-lg" :style="{ width: '40px', height: '40px', background: card.color + '15', color: card.color }">
-          <el-icon :size="20"><component :is="useRenderIcon(card.icon)" /></el-icon>
+        <div
+          class="flex-c rounded-lg"
+          :style="{
+            width: '40px',
+            height: '40px',
+            background: card.color + '15',
+            color: card.color
+          }"
+        >
+          <el-icon :size="20"
+            ><component :is="useRenderIcon(card.icon)"
+          /></el-icon>
         </div>
         <div>
-          <div class="text-xs" :style="{ color: 'var(--el-text-color-secondary)' }">{{ card.label }}</div>
-          <div class="text-xl font-semibold" :style="{ color: 'var(--el-text-color-primary)' }">{{ card.value }}</div>
+          <div
+            class="text-xs"
+            :style="{ color: 'var(--el-text-color-secondary)' }"
+          >
+            {{ card.label }}
+          </div>
+          <div
+            class="text-xl font-semibold"
+            :style="{ color: 'var(--el-text-color-primary)' }"
+          >
+            {{ card.value }}
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      class="wms-card mb-4"
-      :style="{ padding: '20px 24px' }"
-    >
+    <div class="wms-card mb-4" :style="{ padding: '20px 24px' }">
       <div
         class="flex items-center gap-2 mb-4 text-sm font-semibold"
         :style="{ color: 'var(--el-text-color-primary)' }"
@@ -263,21 +311,31 @@ onMounted(async () => {
       </div>
     </div>
 
-    <PureTableBar title="库龄分析报表" :columns="columns" storage-key="StockAging" @refresh="search">
-      <template v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }">
-        <pure-table :key="tableRefreshKey"
-          @header-dragend="(newWidth, _oldWidth, col) => onColumnResize(col.label || col.property, newWidth)"
+    <PureTableBar
+      title="库龄分析报表"
+      :columns="columns"
+      storage-key="StockAging"
+      @refresh="search"
+    >
+      <template
+        v-slot="{ size, dynamicColumns, onColumnResize, tableRefreshKey }"
+      >
+        <pure-table
+          :key="tableRefreshKey"
           row-key="product_code"
           border
           adaptive
           :adaptiveConfig="{ offsetBottom: 108 }"
           align-whole="left"
-         
           stripe
           :loading="loading"
           :size="size"
           :data="tableData"
           :columns="dynamicColumns"
+          @header-dragend="
+            (newWidth, _oldWidth, col) =>
+              onColumnResize(col.label || col.property, newWidth)
+          "
           :pagination="{ ...pagination, size }"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
@@ -289,7 +347,10 @@ onMounted(async () => {
           @page-current-change="onPageChange"
         >
           <template #empty>
-            <EmptyState title="暂无库龄分析数据" description="请设置筛选条件后点击查询" />
+            <EmptyState
+              title="暂无库龄分析数据"
+              description="请设置筛选条件后点击查询"
+            />
           </template>
           <template #current_weight="{ row }">{{
             Number(row.current_weight || 0).toFixed(4)
@@ -324,6 +385,7 @@ onMounted(async () => {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
 }
