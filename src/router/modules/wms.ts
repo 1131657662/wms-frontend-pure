@@ -82,6 +82,12 @@ export default [
         name: "StockAging",
         component: () => import("@/views/wms/report/StockAging.vue"),
         meta: { title: "库龄分析报表" }
+      },
+      {
+        path: "/report/inventory-settlement",
+        name: "InventorySettlement",
+        component: () => import("@/views/wms/report/InventorySettlement.vue"),
+        meta: { title: "库存结算对账单" }
       }
     ]
   },

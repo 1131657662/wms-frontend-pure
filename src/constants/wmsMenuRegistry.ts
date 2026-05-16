@@ -17,6 +17,7 @@ export const WMS_MENU_LABEL_DEFS: Record<string, WmsMenuLabelDef> = {
   "/report/stock-journal": { label: "进销存台账" },
   "/report/period-summary": { label: "收发存汇总表" },
   "/report/stock-aging": { label: "库龄分析报表" },
+  "/report/inventory-settlement": { label: "库存结算对账单" },
   base: { label: "基础资料" },
   "/product-category": { label: "商品分类" },
   "/product": { label: "商品管理" },
