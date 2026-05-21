@@ -237,7 +237,7 @@ async function searchProduct(keyword?: string) {
   productLoading.value = true;
   try {
     const res = await api.get("/product/search", {
-      params: { keyword: keyword || undefined, pageSize: 200 }
+      params: { keyword: keyword || undefined, pageSize: 500 }
     });
     const data = responseList(res.data);
     productOptions.value = data;
@@ -866,6 +866,9 @@ onMounted(() => {
           v-model="filters.product_code"
           clearable
           filterable
+          remote
+          :remote-method="searchProduct"
+          :loading="productLoading"
           placeholder="产品编码"
           class="w-36!"
           @change="applyFilters"
@@ -881,6 +884,9 @@ onMounted(() => {
           v-model="filters.product_name"
           clearable
           filterable
+          remote
+          :remote-method="searchProduct"
+          :loading="productLoading"
           placeholder="产品名称"
           class="w-40!"
           @change="applyFilters"
@@ -896,6 +902,9 @@ onMounted(() => {
           v-model="filters.product_model"
           clearable
           filterable
+          remote
+          :remote-method="searchProduct"
+          :loading="productLoading"
           placeholder="产品型号"
           class="w-40!"
           @change="applyFilters"

@@ -62,7 +62,7 @@ const { title, getLogo } = useNav();
       margin-left: 10px;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 600;
       line-height: 1.15;
       color: #ea5413;
