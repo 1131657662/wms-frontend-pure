@@ -17,7 +17,8 @@ const form = reactive({
   nickname: "",
   phone: "",
   email: "",
-  roleCode: ""
+  roleCode: "",
+  roleName: ""
 });
 const pwdForm = reactive({
   oldPassword: "",
@@ -94,8 +95,8 @@ async function loadProfile() {
       nickname: res.data.nickname || "",
       phone: res.data.phone || "",
       email: res.data.email || "",
-      roleCode:
-        JSON.parse(localStorage.getItem("user-info") || "{}").roleCode || ""
+      roleCode: res.data.roleCode || "",
+      roleName: res.data.roleName || ""
     });
     avatarUrl.value = res.data.avatar || "";
   } finally {
@@ -193,7 +194,7 @@ onMounted(loadProfile);
             ><el-input v-model="form.email"
           /></el-form-item>
           <el-form-item label="角色"
-            ><el-input :model-value="form.roleCode" disabled
+            ><el-input :model-value="form.roleName || form.roleCode" disabled
           /></el-form-item>
           <el-form-item>
             <el-button type="primary" :loading="saving" @click="handleSave"
