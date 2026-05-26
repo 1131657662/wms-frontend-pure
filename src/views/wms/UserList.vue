@@ -12,6 +12,10 @@ import User from "~icons/ri/user-line";
 import Shield from "~icons/ri/shield-user-line";
 import Time from "~icons/ep/timer";
 import Search from "~icons/ri/search-line";
+import FileCopyLine from "~icons/ri/file-copy-line";
+import TaskLine from "~icons/ri/task-line";
+import ComputerLine from "~icons/ri/computer-line";
+import SmartphoneLine from "~icons/ri/smartphone-line";
 
 defineOptions({ name: "UserList" });
 
@@ -129,6 +133,42 @@ const formRules = {
   username: [{ required: true, message: "请输入用户名", trigger: "blur" }]
 };
 
+// ==================== 分享弹窗 ====================
+const shareVisible = ref(false);
+const shareCopied = ref(false);
+const shareAccount = reactive({
+  username: "",
+  password: ""
+});
+const loginUrl = computed(() => window.location.origin + "/#/login");
+
+function buildShareText() {
+  return `【茂智云仓 · 账号信息】
+
+🌐 电脑端登录
+${loginUrl.value}
+
+👤 账号：${shareAccount.username}
+🔑 初始密码：${shareAccount.password}
+
+📱 小程序端
+微信搜索「茂智腈纶助手」小程序，使用上方账号密码登录
+
+⚠️ 为了您的账户安全，登录后请尽快修改初始密码。`;
+}
+
+async function copyShareInfo() {
+  try {
+    await navigator.clipboard.writeText(buildShareText());
+    shareCopied.value = true;
+    setTimeout(() => {
+      shareCopied.value = false;
+    }, 2000);
+  } catch {
+    ElMessage.warning("复制失败，请手动复制");
+  }
+}
+
 function openDialog(row?: any) {
   if (row?.id) {
     dialogTitle.value = "编辑用户";
@@ -165,10 +205,15 @@ async function handleSave() {
   try {
     if (form.id) {
       await api.put(`/sys/user/${form.id}`, { ...form });
+      ElMessage.success("更新成功");
     } else {
       await api.post("/sys/user", { ...form });
+      shareAccount.username = form.username;
+      shareAccount.password = "123456";
+      shareCopied.value = false;
+      shareVisible.value = true;
+      ElMessage.success("创建成功");
     }
-    ElMessage.success(form.id ? "更新成功" : "创建成功，初始密码为 123456");
     dialogVisible.value = false;
     fetchData();
   } catch (e: any) {
@@ -489,6 +534,92 @@ onMounted(() => {
         >
       </template>
     </el-dialog>
+
+    <!-- ==================== 创建成功分享弹窗 ==================== -->
+    <el-dialog
+      v-model="shareVisible"
+      width="480px"
+      :close-on-click-modal="false"
+      :show-close="true"
+      class="share-dialog"
+    >
+      <template #header>
+        <div class="share-header">
+          <span class="share-check">✓</span>
+          <span>账号创建成功</span>
+        </div>
+      </template>
+
+      <div class="share-body">
+        <p class="share-intro">
+          请将以下信息发送给 <strong>{{ shareAccount.username }}</strong
+          >，用户凭此登录系统。
+        </p>
+
+        <!-- 电脑端 -->
+        <div class="share-card">
+          <div class="share-card-title">
+            <ComputerLine class="share-card-icon" />
+            电脑端登录
+          </div>
+          <div class="share-card-content">
+            <div class="share-row">
+              <span class="share-label">登录地址</span>
+              <code class="share-value-link">{{ loginUrl }}</code>
+            </div>
+            <div class="share-row">
+              <span class="share-label">账号</span>
+              <code class="share-value">{{ shareAccount.username }}</code>
+            </div>
+            <div class="share-row">
+              <span class="share-label">初始密码</span>
+              <code class="share-value-pwd">{{ shareAccount.password }}</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- 小程序端 -->
+        <div class="share-card">
+          <div class="share-card-title">
+            <SmartphoneLine class="share-card-icon" />
+            小程序端登录
+          </div>
+          <div class="share-card-content">
+            <p class="share-miniapp-text">
+              微信搜索小程序
+              <strong>「茂智云仓」</strong>，绑定上方账号密码即可登录
+            </p>
+          </div>
+        </div>
+
+        <!-- 安全提示 -->
+        <div class="share-warning">
+          ⚠️ 为了账户安全，请提醒用户登录后尽快修改初始密码。
+        </div>
+
+        <!-- 一键复制 -->
+        <el-button
+          :type="shareCopied ? 'success' : 'primary'"
+          class="share-copy-btn"
+          size="large"
+          @click="copyShareInfo"
+        >
+          <template v-if="shareCopied">
+            <TaskLine style="width: 18px; height: 18px; margin-right: 6px" />
+            已复制
+          </template>
+          <template v-else>
+            <FileCopyLine
+              style="width: 18px; height: 18px; margin-right: 6px"
+            />
+            一键复制账号信息
+          </template>
+        </el-button>
+        <p class="share-copy-hint">
+          复制内容已包含完整登录指引，可直接粘贴发送给用户
+        </p>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -526,5 +657,161 @@ onMounted(() => {
 
 :deep(.el-table__body-wrapper .el-table__row:hover > td) {
   background-color: var(--el-fill-color-light) !important;
+}
+
+/* ==================== 分享弹窗 ==================== */
+.share-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px 12px;
+}
+
+.share-dialog :deep(.el-dialog__body) {
+  padding: 0 24px 24px;
+}
+
+.share-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.share-check {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--el-color-success);
+  border-radius: 50%;
+}
+
+.share-intro {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.share-intro strong {
+  color: var(--el-text-color-primary);
+}
+
+.share-card {
+  margin-bottom: 12px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+}
+
+.share-card-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.share-card-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--el-color-primary);
+}
+
+.share-card-content {
+  padding: 10px 14px;
+}
+
+.share-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.share-row + .share-row {
+  border-top: 1px dashed var(--el-border-color-lighter);
+}
+
+.share-label {
+  flex-shrink: 0;
+  width: 64px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.share-value {
+  padding: 3px 8px;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color);
+  border-radius: 4px;
+}
+
+.share-value-link {
+  padding: 3px 8px;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  word-break: break-all;
+  text-decoration: none;
+  background: var(--el-fill-color);
+  border-radius: 4px;
+}
+
+.share-value-pwd {
+  padding: 3px 8px;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-color-warning);
+  letter-spacing: 2px;
+  background: var(--el-fill-color);
+  border-radius: 4px;
+}
+
+.share-miniapp-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--el-text-color-regular);
+}
+
+.share-miniapp-text strong {
+  color: var(--el-color-primary);
+}
+
+.share-warning {
+  padding: 10px 14px;
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+  border: 1px solid var(--el-color-warning-light-7);
+  border-radius: 6px;
+}
+
+.share-copy-btn {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.share-copy-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  text-align: center;
 }
 </style>

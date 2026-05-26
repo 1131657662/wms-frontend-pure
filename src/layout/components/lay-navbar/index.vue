@@ -13,6 +13,7 @@ import AccountSettingsIcon from "~icons/ri/user-settings-line";
 import LogoutCircleRLine from "~icons/ri/logout-circle-r-line";
 import Setting from "~icons/ri/settings-3-line";
 import Check from "~icons/ep/check";
+import BookOpenLine from "~icons/ri/book-open-line";
 
 const {
   layout,
@@ -28,6 +29,10 @@ const {
   getDropdownItemStyle,
   getDropdownItemClass
 } = useNav();
+
+function openManual() {
+  window.open("/#/manual", "_blank");
+}
 
 const { t, locale, translationCh, translationEn } = useTranslationLang();
 </script>
@@ -87,6 +92,14 @@ const { t, locale, translationCh, translationEn } = useTranslationLang();
       </el-dropdown>
       <!-- 全屏 -->
       <LaySidebarFullScreen id="full-screen" />
+      <!-- 操作手册 -->
+      <span
+        class="manual-icon navbar-bg-hover hover:[&>svg]:animate-scale-bounce"
+        title="操作手册"
+        @click="openManual"
+      >
+        <IconifyIconOffline :icon="BookOpenLine" />
+      </span>
       <!-- 消息通知 -->
       <LayNotice id="header-notice" />
       <!-- 退出登录 -->

@@ -76,5 +76,15 @@ export default [
       title: $t("menus.pureEmpty"),
       showLink: false
     }
+  },
+  // 操作手册（独立页面，无系统布局）
+  {
+    path: "/manual",
+    name: "Manual",
+    component: () => import("@/views/wms/Manual.vue"),
+    meta: {
+      title: "操作手册",
+      showLink: false
+    }
   }
 ] satisfies Array<RouteConfigsTable>;

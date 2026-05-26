@@ -35,7 +35,8 @@
 
   .set-icon,
   .fullscreen-icon,
-  .globalization-icon {
+  .globalization-icon,
+  .manual-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -459,7 +460,9 @@
       /* 用户名 */
       .el-dropdown-link,
       /* 设置 */
-      .set-icon {
+      .set-icon,
+      /* 操作手册 */
+      .manual-icon {
         &:hover {
           background: var(--pure-theme-menu-hover);
         }
@@ -636,7 +639,9 @@ body[layout="vertical"] {
   /* 用户名 */
   .el-dropdown-link,
   /* 设置 */
-  .set-icon {
+  .set-icon,
+  /* 操作手册 */
+  .manual-icon {
     &:hover {
       background: #f6f6f6;
     }

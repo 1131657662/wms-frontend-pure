@@ -172,7 +172,7 @@ router.beforeEach(async (to: ToRouteType, _from) => {
     }
   } else {
     if (to.path !== "/login") {
-      if (whiteList.indexOf(to.path) !== -1) {
+      if (whiteList.indexOf(to.path) !== -1 || to.path === "/manual") {
         return true;
       } else {
         removeToken();
