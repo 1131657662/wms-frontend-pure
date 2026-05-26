@@ -80,6 +80,10 @@ const handleSubmitImage = async () => {
     if (res.code === 200) {
       userInfos.avatar = res.data.avatar;
       useUserStoreHook().SET_AVATAR(res.data.avatar);
+      // 同步更新 localStorage，否则重新打开页面（未重新登录）时导航栏显示旧头像
+      const userInfo = JSON.parse(localStorage.getItem("user-info") || "{}");
+      userInfo.avatar = res.data.avatar;
+      localStorage.setItem("user-info", JSON.stringify(userInfo));
       message("更新头像成功", { type: "success" });
       handleClose();
     } else {

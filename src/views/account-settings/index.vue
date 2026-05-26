@@ -3,13 +3,14 @@ import { getMine } from "@/api/user";
 import { useRouter } from "vue-router";
 import { ReText } from "@/components/ReText";
 import Profile from "./components/Profile.vue";
-import { ref, onMounted, onBeforeMount } from "vue";
+import { ref, onMounted, onBeforeMount, watch } from "vue";
 import Preferences from "./components/Preferences.vue";
 import SecurityLog from "./components/SecurityLog.vue";
 import ChangePassword from "./components/ChangePassword.vue";
 import { useGlobal, deviceDetection } from "@pureadmin/utils";
 import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
 import LaySidebarTopCollapse from "@/layout/components/lay-sidebar/components/SidebarTopCollapse.vue";
+import { useUserStoreHook } from "@/store/modules/user";
 
 import leftLine from "~icons/ri/arrow-left-s-line";
 import ProfileIcon from "~icons/ri/user-3-line";
@@ -67,6 +68,14 @@ onMounted(async () => {
     userInfo.value = data;
   }
 });
+
+// Profile 子组件更新头像后，同步更新侧边栏头像
+watch(
+  () => useUserStoreHook().avatar,
+  newAvatar => {
+    if (newAvatar) userInfo.value.avatar = newAvatar;
+  }
+);
 </script>
 
 <template>
