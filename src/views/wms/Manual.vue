@@ -431,7 +431,9 @@ onMounted(() => {
   <div class="doc-layout">
     <header class="doc-header">
       <div class="doc-header-left">
+        <img src="/logo.png" alt="logo" class="doc-logo-img" />
         <span class="doc-logo-text">茂智云仓</span>
+        <span class="doc-logo-sep">|</span>
         <span class="doc-subtitle">操作手册</span>
       </div>
 
@@ -577,20 +579,34 @@ onMounted(() => {
 .doc-header-left {
   display: flex;
   flex-shrink: 0;
-  gap: 12px;
-  align-items: baseline;
+  align-items: center;
+}
+
+.doc-logo-img {
+  flex-shrink: 0;
+  height: 32px;
 }
 
 .doc-logo-text {
+  margin-left: 10px;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #ea5413;
+  white-space: nowrap;
+}
+
+.doc-logo-sep {
+  margin: 0 12px;
   font-size: 18px;
-  font-weight: 700;
-  color: var(--el-color-primary);
-  letter-spacing: 0.5px;
+  font-weight: 300;
+  color: var(--el-border-color);
 }
 
 .doc-subtitle {
   font-size: 14px;
   color: var(--el-text-color-secondary);
+  letter-spacing: 1px;
 }
 
 .doc-header-center {
@@ -869,69 +885,94 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   font-size: 14px;
-  line-height: 1.8;
-  color: var(--el-text-color-primary);
+  line-height: 1.7;
+  color: #333;
 }
 
+/* ========= 标题层次 ========= */
 .markdown-body :deep(h1) {
-  padding-bottom: 16px;
-  margin: 0 0 24px;
-  font-size: 28px;
+  padding-bottom: 12px;
+  margin: 0 0 20px;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1.3;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  color: #1a1a1a;
+  border-bottom: 1px solid #e8e8e8;
 }
 
 .markdown-body :deep(h2) {
-  margin: 44px 0 12px;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.4;
+  margin: 40px 0 16px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #1a1a1a;
 }
 
 .markdown-body :deep(h3) {
-  margin: 32px 0 8px;
-  font-size: 16px;
+  margin: 28px 0 12px;
+  font-size: 18px;
   font-weight: 600;
-  color: var(--el-text-color-regular);
+  line-height: 1.4;
+  color: #333;
 }
 
+.markdown-body :deep(h4) {
+  margin: 20px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #555;
+}
+
+/* ========= 段落与列表 ========= */
 .markdown-body :deep(p) {
-  margin: 10px 0;
+  margin: 0 0 12px;
 }
 
 .markdown-body :deep(ul),
 .markdown-body :deep(ol) {
-  padding-left: 24px;
-  margin: 10px 0;
+  padding-left: 20px;
+  margin: 0 0 12px;
 }
 
 .markdown-body :deep(li) {
-  margin: 5px 0;
+  margin: 4px 0;
 }
 
+/* ========= 表格 ========= */
 .markdown-body :deep(.md-table) {
   width: 100%;
   margin: 20px 0;
   overflow: hidden;
   font-size: 13px;
   border-collapse: collapse;
-  border: 1px solid var(--el-border-color-lighter);
+  border: 1px solid #e8e8e8;
   border-radius: 4px;
 }
 
 .markdown-body :deep(.md-table th) {
-  padding: 10px 14px;
+  padding: 10px 16px;
+  font-size: 13px;
   font-weight: 600;
+  color: #333;
   text-align: left;
-  background: var(--el-fill-color-light);
-  border-bottom: 2px solid var(--el-border-color-lighter);
+  background: #f5f7fa;
+  border-right: none;
+  border-bottom: 1px solid #e8e8e8;
+  border-left: none;
 }
 
 .markdown-body :deep(.md-table td) {
-  padding: 9px 14px;
+  padding: 10px 16px;
+  font-size: 13px;
   text-align: left;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  border-right: none;
+  border-bottom: 1px solid #eee;
+  border-left: none;
+}
+
+.markdown-body :deep(.md-table tr:nth-child(even) td) {
+  background: #fafafa;
 }
 
 .markdown-body :deep(.md-table tr:last-child td) {
@@ -939,22 +980,24 @@ onMounted(() => {
 }
 
 .markdown-body :deep(.md-table tr:hover td) {
-  background: var(--el-fill-color-lighter);
+  background: #f0f2f5;
 }
 
+/* ========= 分割线 ========= */
 .markdown-body :deep(hr) {
   margin: 32px 0;
   border: none;
-  border-top: 1px solid var(--el-border-color-lighter);
+  border-top: 1px solid #eee;
 }
 
+/* ========= 引用块 ========= */
 .markdown-body :deep(blockquote) {
   padding: 12px 16px;
   margin: 16px 0;
   font-size: 13px;
-  color: var(--el-text-color-secondary);
-  background: var(--el-color-primary-light-9);
-  border-left: 3px solid var(--el-color-primary-light-3);
+  color: #666;
+  background: #f5f7fa;
+  border-left: 3px solid #409eff;
   border-radius: 0 4px 4px 0;
 }
 
@@ -962,34 +1005,37 @@ onMounted(() => {
   margin: 4px 0;
 }
 
+/* ========= 行内代码 ========= */
 .markdown-body :deep(code) {
   padding: 2px 6px;
   font-family: Consolas, Monaco, "Courier New", monospace;
   font-size: 13px;
-  color: var(--el-color-danger);
-  background: var(--el-fill-color);
+  color: #e24b5b;
+  background: #f5f5f5;
   border-radius: 3px;
 }
 
+/* ========= 代码块 ========= */
 .markdown-body :deep(pre) {
   padding: 14px 16px;
   margin: 16px 0;
   overflow-x: auto;
   line-height: 1.6;
-  background: var(--el-fill-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
+  background: #f5f5f5;
+  border-left: 3px solid #409eff;
+  border-radius: 4px;
 }
 
 .markdown-body :deep(pre code) {
   padding: 0;
-  color: var(--el-text-color-primary);
+  color: #333;
   background: none;
 }
 
+/* ========= 加粗 ========= */
 .markdown-body :deep(strong) {
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: #1a1a1a;
 }
 
 /* ========= 搜索高亮 ========= */
